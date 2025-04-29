@@ -105,15 +105,15 @@ async function processImage(imagePath) {
 						const qu = Math.floor(cu * (BPP8 ? 3.9 : 15.9));
 						const qv = Math.floor(cv * (BPP8 ? 3.9 : 15.9));
 						const res = [
-							(Math.abs(qy - prevpix[0]) / (BPP8 ? 15.9 : 15.9)) * blockdrangey <=
+							(Math.abs(qy - prevpix[0]) / (BPP8 ? 15.9 : 15.9)) * blockdrangey <
 							COMPRESS_LEVEL / 2
 								? prevpix[0]
 								: qy,
-							(Math.abs(qu - prevpix[1]) / (BPP8 ? 3.9 : 15.9)) * blockdrangeu <=
+							(Math.abs(qu - prevpix[1]) / (BPP8 ? 3.9 : 15.9)) * blockdrangeu <
 							COMPRESS_LEVEL
 								? prevpix[1]
 								: qu,
-							(Math.abs(qv - prevpix[2]) / (BPP8 ? 3.9 : 15.9)) * blockdrangev <=
+							(Math.abs(qv - prevpix[2]) / (BPP8 ? 3.9 : 15.9)) * blockdrangev <
 							COMPRESS_LEVEL
 								? prevpix[2]
 								: qv,
