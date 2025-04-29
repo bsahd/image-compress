@@ -48,7 +48,7 @@ async function processImage(imagePath) {
 			height += padBottom;
 			console.log("extended", width, height);
 		}
-		/** @type {{width:number,height:number,blocks:{x:number,y:number,nblock4bn:number[][],blockmaxy:number,blockminy:number,blockmaxu:number,blockminu:number,blockmaxv:number,blockminv:number}[]}} */
+		/** @type {{width:number,height:number,blocks:{nblock4bn:number[][],blockmaxy:number,blockminy:number,blockmaxu:number,blockminu:number,blockmaxv:number,blockminv:number}[]}} */
 		const imgdata = {
 			width,
 			height,
@@ -120,8 +120,6 @@ async function processImage(imagePath) {
 					throw new Error(`Overflow detected at block (${x},${y})`);
 				}
 				imgdata.blocks.push({
-					x,
-					y,
 					blockmaxy,
 					blockminy,
 					blockmaxu,

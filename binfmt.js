@@ -21,8 +21,6 @@ export function buf2img(buf) {
 	img.blocks = [];
 	for (let index = 0; index < blockcount; index++) {
 		const elem = {};
-		elem.x = readBuf16();
-		elem.y = readBuf16();
 		elem.nblock4bn = [];
 		elem.blockmaxy = readBuf8();
 		elem.blockminy = readBuf8();
@@ -48,7 +46,7 @@ export function buf2img(buf) {
 	return img;
 }
 export function img2buf(img) {
-	const buffer = Buffer.alloc(img.blocks.length * (BPP8 ? 64 + 6 + 4 : 128 + 6 + 4) + 8);
+	const buffer = Buffer.alloc(img.blocks.length * (BPP8 ? 64 + 6 : 128 + 6) + 8);
 	let writeHead = 0;
 	function writeBuf32(a) {
 		buffer.writeInt32BE(a, writeHead);
@@ -72,8 +70,6 @@ export function img2buf(img) {
 	writeBuf16(img.height);
 	writeBuf32(img.blocks.length);
 	for (const block of img.blocks) {
-		writeBuf16(block.x);
-		writeBuf16(block.y);
 		writeBuf8(block.blockmaxy);
 		writeBuf8(block.blockminy);
 		writeBuf8(block.blockmaxu);
