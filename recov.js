@@ -17,7 +17,7 @@ async function reconstructImage({ width, height, blocks }) {
 	const resultBuffer = Buffer.alloc(width * height * 3);
 	let doneb = 0;
 	// imgdata から再構築
-	let x = 0;
+	let x = -8;
 	let y = 0;
 	blocks.forEach(
 		({ nblock4bn, blockmaxy, blockminy, blockmaxu, blockminu, blockmaxv, blockminv }) => {
