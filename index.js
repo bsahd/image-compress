@@ -99,34 +99,21 @@ async function processImage(imagePath) {
 				);
 				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
-				const nblock4b = nblock.map((x) =>
-					x.map(([cy, cu, cv]) => {
+				const nblock4b = nblock.map((tileline, y) => {
+					return tileline.map(([cy, cu, cv], x) => {
 						const qy = Math.floor(cy * (BPP8 ? 15.9 : 15.9));
 						const qu = Math.floor(cu * (BPP8 ? 3.9 : 15.9));
 						const qv = Math.floor(cv * (BPP8 ? 3.9 : 15.9));
-						const res = [
-							(Math.abs(qy - prevpix[0]) / (BPP8 ? 15.9 : 15.9)) * blockdrangey <
-							COMPRESS_LEVEL / 2
-								? prevpix[0]
-								: qy,
-							(Math.abs(qu - prevpix[1]) / (BPP8 ? 3.9 : 15.9)) * blockdrangeu <
-							COMPRESS_LEVEL
-								? prevpix[1]
-								: qu,
-							(Math.abs(qv - prevpix[2]) / (BPP8 ? 3.9 : 15.9)) * blockdrangev <
-							COMPRESS_LEVEL
-								? prevpix[2]
-								: qv,
-						];
+						const res = [qy, qu, qv];
 						const resd = [
-							pixdelta(prevpix[0], res[0], 16),
-							pixdelta(prevpix[1], res[1], BPP8 ? 4 : 16),
-							pixdelta(prevpix[2], res[2], BPP8 ? 4 : 16),
+							pixdelta(prevpix[0], qy, 16),
+							pixdelta(prevpix[1], qu, BPP8 ? 4 : 16),
+							pixdelta(prevpix[2], qv, BPP8 ? 4 : 16),
 						];
 						prevpix = res;
 						return resd;
-					})
-				);
+					});
+				});
 				const nblock4bn = nblock4b.map((x) =>
 					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b)
 				);
