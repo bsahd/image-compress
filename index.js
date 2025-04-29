@@ -72,21 +72,21 @@ async function processImage(imagePath) {
 				const blockminy = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
-				const blockdrangey = blockmaxy - blockminy;
+				const blockdrangey = blockmaxy - blockminy+1;
 				const blockmaxu = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
 				const blockminu = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
-				const blockdrangeu = blockmaxu - blockminu;
+				const blockdrangeu = blockmaxu - blockminu+1;
 				const blockmaxv = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
 				const blockminv = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
-				const blockdrangev = blockmaxv - blockminv;
+				const blockdrangev = blockmaxv - blockminv+1;
 				const nblock = blockyuv.map((x) =>
 					x.map(([cy, cu, cv]) => [
 						blockdrangey < COMPRESS_LEVEL / 2 ? 0.75 : (cy - blockminy) / blockdrangey,
