@@ -13,6 +13,13 @@ function rgbToYuvNorm([r, g, b]) {
 	return [Y, U, V];
 }
 
+function pixdelta(prev, now, max) {
+	if (now >= prev) {
+		return now - prev;
+	} else {
+		return max + now - prev;
+	}
+}
 const COMPRESS_LEVEL = 0;
 
 async function processImage(imagePath) {
@@ -88,17 +95,29 @@ async function processImage(imagePath) {
 						blockdrangev < COMPRESS_LEVEL ? 0.5 : (cv - blockminv) / blockdrangev,
 					])
 				);
+				/** @type {number[]} */
+				let prevpix = [0, 0, 0];
 				const nblock4b = nblock.map((x) =>
-					x.map(([cy, cu, cv]) => [
-						Math.floor(cy * (BPP8 ? 15.9 : 15.9)),
-						Math.floor(cu * (BPP8 ? 3.9 : 15.9)),
-						Math.floor(cv * (BPP8 ? 3.9 : 15.9)),
-					])
+					x.map(([cy, cu, cv]) => {
+						const res = [
+							Math.floor(cy * (BPP8 ? 15.9 : 15.9)),
+							Math.floor(cu * (BPP8 ? 3.9 : 15.9)),
+							Math.floor(cv * (BPP8 ? 3.9 : 15.9)),
+						];
+						const resd = [
+							pixdelta(prevpix[0], res[0], 16),
+							pixdelta(prevpix[1], res[1], BPP8 ? 4 : 16),
+							pixdelta(prevpix[2], res[2], BPP8 ? 4 : 16),
+						];
+						prevpix = res;
+						return resd;
+					})
 				);
 				const nblock4bn = nblock4b.map((x) =>
 					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b)
 				);
 				if (nblock4bn.flat().some((a) => a > 255)) {
+					console.log(nblock4b);
 					throw new Error(`Overflow detected at block (${x},${y})`);
 				}
 				imgdata.blocks.push({
