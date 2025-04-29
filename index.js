@@ -46,6 +46,7 @@ async function processImage(imagePath) {
 			});
 			width += padRight;
 			height += padBottom;
+			console.log("extended", width, height);
 		}
 		/** @type {{width:number,height:number,blocks:{x:number,y:number,nblock4bn:number[][],blockmaxy:number,blockminy:number,blockmaxu:number,blockminu:number,blockmaxv:number,blockminv:number}[]}} */
 		const imgdata = {
@@ -55,11 +56,10 @@ async function processImage(imagePath) {
 		};
 
 		// 画像のピクセルデータを取得
-		const rawData = await image.raw().toBuffer();
+		const rawData = await image.raw().removeAlpha().toBuffer();
 		console.log(`total ${(width * height) / 64} blocks`);
 		let doneb = 0;
 		const blockcount = (width * height) / 64;
-
 		// 画像のピクセルデータを8x8ブロックごとに処理
 		for (let y = 0; y < height; y += 8) {
 			for (let x = 0; x < width; x += 8) {
