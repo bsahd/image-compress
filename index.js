@@ -10,7 +10,7 @@ function rgbToYuvNorm([r, g, b]) {
 	return [Y, U, V];
 }
 
-const COMPRESS_LEVEL = 12;
+const COMPRESS_LEVEL = 0;
 
 async function processImage(imagePath) {
 	try {

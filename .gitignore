@@ -136,9 +136,10 @@ dist
 .pnp.*
 
 # original
-*.PNG
-*.png
-*.JPG
-*.jpg
-*.bin
-*.bin.xz
+/*.PNG
+/*.png
+/*.JPG
+/*.jpg
+/*.bin
+/*.bin.xz
+!/colorbar*
