@@ -66,27 +66,27 @@ async function processImage(imagePath) {
 				// 8x8の範囲を取り出して処理
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
-				const blockmaxy = Math.floor(
+				const blockmaxy = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
 				const blockminy = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
-				const blockdrangey = blockmaxy - blockminy + 1;
-				const blockmaxu = Math.floor(
+				const blockdrangey = blockmaxy - blockminy;
+				const blockmaxu = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
 				const blockminu = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
-				const blockdrangeu = blockmaxu - blockminu + 1;
-				const blockmaxv = Math.floor(
+				const blockdrangeu = blockmaxu - blockminu;
+				const blockmaxv = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
 				const blockminv = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
-				const blockdrangev = blockmaxv - blockminv + 1;
+				const blockdrangev = blockmaxv - blockminv;
 				const nblock = blockyuv.map((x) =>
 					x.map(([cy, cu, cv]) => [
 						blockdrangey < COMPRESS_LEVEL / 2 ? 0.75 : (cy - blockminy) / blockdrangey,
