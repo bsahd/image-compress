@@ -9,13 +9,13 @@ function yuvToRgbNorm([Y, U, V]) {
 	return [R, G, B];
 }
 function pixdelta(prev, del, max) {
-	return (prev + del) % max ;
+	return (prev + del) % max;
 }
 // imgdataを元に画像を再構築する関数
 async function reconstructImage({ width, height, blocks }) {
 	// 新しい画像用のバッファを作成
 	const resultBuffer = Buffer.alloc(width * height * 3);
-
+	let doneb = 0;
 	// imgdata から再構築
 	blocks.forEach(
 		({ x, y, nblock4bn, blockmaxy, blockminy, blockmaxu, blockminu, blockmaxv, blockminv }) => {
@@ -49,6 +49,14 @@ async function reconstructImage({ width, height, blocks }) {
 					resultBuffer[offset + 2] = cb;
 				}
 			}
+			doneb++
+			process.stdout.write(
+				new TextEncoder().encode(
+					`\rprocessing... ${doneb
+						.toString()
+						.padStart(blocks.length.toString().length)}/${blocks.length}block`
+				)
+			);
 		}
 	);
 

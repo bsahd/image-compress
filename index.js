@@ -17,7 +17,7 @@ function pixdelta(prev, now, max) {
 		return max + now - prev;
 	}
 }
-const COMPRESS_LEVEL = 0;
+const COMPRESS_LEVEL = parseInt(process.argv[4]);
 
 async function processImage(imagePath) {
 	try {
@@ -57,6 +57,8 @@ async function processImage(imagePath) {
 		// 画像のピクセルデータを取得
 		const rawData = await image.raw().toBuffer();
 		console.log(`total ${(width * height) / 64} blocks`);
+		let doneb = 0;
+		const blockcount = (width * height) / 64;
 
 		// 画像のピクセルデータを8x8ブロックごとに処理
 		for (let y = 0; y < height; y += 8) {
@@ -64,30 +66,30 @@ async function processImage(imagePath) {
 				// 8x8の範囲を取り出して処理
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
-				const blockmaxy = Math.floor(
+				const blockmaxy = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
 				const blockminy = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
-				const blockdrangey = blockmaxy - blockminy + 1;
-				const blockmaxu = Math.floor(
+				const blockdrangey = blockmaxy - blockminy;
+				const blockmaxu = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
 				const blockminu = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
-				const blockdrangeu = blockmaxu - blockminu + 1;
-				const blockmaxv = Math.floor(
+				const blockdrangeu = blockmaxu - blockminu;
+				const blockmaxv = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
 				const blockminv = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
-				const blockdrangev = blockmaxv - blockminv + 1;
+				const blockdrangev = blockmaxv - blockminv;
 				const nblock = blockyuv.map((x) =>
 					x.map(([cy, cu, cv]) => [
-						blockdrangey < COMPRESS_LEVEL / 2 ? 0.5 : (cy - blockminy) / blockdrangey,
+						blockdrangey < COMPRESS_LEVEL / 2 ? 0.75 : (cy - blockminy) / blockdrangey,
 						blockdrangeu < COMPRESS_LEVEL ? 0.5 : (cu - blockminu) / blockdrangeu,
 						blockdrangev < COMPRESS_LEVEL ? 0.5 : (cv - blockminv) / blockdrangev,
 					])
@@ -128,13 +130,12 @@ async function processImage(imagePath) {
 					blockminv,
 					nblock4bn,
 				});
+				doneb++;
 				process.stdout.write(
 					new TextEncoder().encode(
-						`\rprocessing... ${imgdata.blocks.length
+						`\rprocessing... ${doneb
 							.toString()
-							.padStart(((width * height) / 64).toString().length)}/${
-							(width * height) / 64
-						}block`
+							.padStart(blockcount.toString().length)}/${blockcount}block`
 					)
 				);
 			}
