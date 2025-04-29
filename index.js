@@ -66,23 +66,26 @@ async function processImage(imagePath) {
 				// 8x8の範囲を取り出して処理
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
-				const blockmaxy = Math.ceil(
+				let blockmaxy = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
+				if (blockmaxy == 256) blockmaxy = 255;
 				const blockminy = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat())
 				);
 				const blockdrangey = blockmaxy - blockminy;
-				const blockmaxu = Math.ceil(
+				let blockmaxu = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
+				if (blockmaxu == 256) blockmaxu = 255;
 				const blockminu = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat())
 				);
 				const blockdrangeu = blockmaxu - blockminu;
-				const blockmaxv = Math.ceil(
+				let blockmaxv = Math.ceil(
 					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
+				if (blockmaxv == 256) blockmaxv = 255;
 				const blockminv = Math.floor(
 					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat())
 				);
@@ -98,10 +101,22 @@ async function processImage(imagePath) {
 				let prevpix = [0, 0, 0];
 				const nblock4b = nblock.map((x) =>
 					x.map(([cy, cu, cv]) => {
+						const qy = Math.floor(cy * (BPP8 ? 15.9 : 15.9));
+						const qu = Math.floor(cu * (BPP8 ? 3.9 : 15.9));
+						const qv = Math.floor(cv * (BPP8 ? 3.9 : 15.9));
 						const res = [
-							Math.floor(cy * (BPP8 ? 15.9 : 15.9)),
-							Math.floor(cu * (BPP8 ? 3.9 : 15.9)),
-							Math.floor(cv * (BPP8 ? 3.9 : 15.9)),
+							(Math.abs(qy - prevpix[0]) / (BPP8 ? 15.9 : 15.9)) * blockdrangey <=
+							COMPRESS_LEVEL / 2
+								? prevpix[0]
+								: qy,
+							(Math.abs(qu - prevpix[1]) / (BPP8 ? 3.9 : 15.9)) * blockdrangeu <=
+							COMPRESS_LEVEL
+								? prevpix[1]
+								: qu,
+							(Math.abs(qv - prevpix[2]) / (BPP8 ? 3.9 : 15.9)) * blockdrangev <=
+							COMPRESS_LEVEL
+								? prevpix[2]
+								: qv,
 						];
 						const resd = [
 							pixdelta(prevpix[0], res[0], 16),
