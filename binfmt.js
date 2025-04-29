@@ -3,6 +3,10 @@ export const BPP8 = true;
 export function buf2img(buf) {
 	const img = {};
 	let readHead = 0;
+	function readBuf32() {
+		readHead += 4;
+		return buf.readInt32BE(readHead - 4);
+	}
 	function readBuf16() {
 		readHead += 2;
 		return buf.readInt16BE(readHead - 2);
@@ -13,8 +17,9 @@ export function buf2img(buf) {
 	}
 	img.width = readBuf16();
 	img.height = readBuf16();
+	const blockcount = readBuf32();
 	img.blocks = [];
-	for (let index = 0; index < (buf.byteLength - 4) / (BPP8 ? 64 + 6 + 4 : 128 + 6 + 4); index++) {
+	for (let index = 0; index < blockcount; index++) {
 		const elem = {};
 		elem.x = readBuf16();
 		elem.y = readBuf16();
@@ -25,6 +30,10 @@ export function buf2img(buf) {
 		elem.blockminu = readBuf8();
 		elem.blockmaxv = readBuf8();
 		elem.blockminv = readBuf8();
+		img.blocks.push(elem);
+	}
+	for (let index = 0; index < blockcount; index++) {
+		const elem = img.blocks[index];
 		for (let i2 = 0; i2 < 8; i2++) {
 			elem.nblock4bn.push([]);
 			for (let i3 = 0; i3 < 8; i3++) {
@@ -35,13 +44,16 @@ export function buf2img(buf) {
 				}
 			}
 		}
-		img.blocks.push(elem);
 	}
 	return img;
 }
 export function img2buf(img) {
-	const buffer = Buffer.alloc(img.blocks.length * (BPP8 ? 64 + 6 + 4 : 128 + 6 + 4) + 4);
+	const buffer = Buffer.alloc(img.blocks.length * (BPP8 ? 64 + 6 + 4 : 128 + 6 + 4) + 8);
 	let writeHead = 0;
+	function writeBuf32(a) {
+		buffer.writeInt32BE(a, writeHead);
+		writeHead += 4;
+	}
 	function writeBuf16(a) {
 		buffer.writeInt16BE(a, writeHead);
 		writeHead += 2;
@@ -52,12 +64,13 @@ export function img2buf(img) {
 		// }else if(a<0){
 		// 	buffer.writeUInt8(0, writeHead);
 		// }else{
-			buffer.writeUInt8(a, writeHead);
+		buffer.writeUInt8(a, writeHead);
 		// }
 		writeHead++;
 	}
 	writeBuf16(img.width);
 	writeBuf16(img.height);
+	writeBuf32(img.blocks.length);
 	for (const block of img.blocks) {
 		writeBuf16(block.x);
 		writeBuf16(block.y);
@@ -67,6 +80,8 @@ export function img2buf(img) {
 		writeBuf8(block.blockminu);
 		writeBuf8(block.blockmaxv);
 		writeBuf8(block.blockminv);
+	}
+	for (const block of img.blocks) {
 		for (const element of block.nblock4bn.flat()) {
 			if (BPP8) {
 				writeBuf8(element);
