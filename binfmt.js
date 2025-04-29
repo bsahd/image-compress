@@ -78,11 +78,13 @@ export function img2buf(img) {
 		writeBuf8(block.blockminv);
 	}
 	for (const block of img.blocks) {
-		for (const element of block.nblock4bn.flat()) {
-			if (BPP8) {
-				writeBuf8(element);
-			} else {
-				writeBuf16(element);
+		for (const e1 of block.nblock4bn) {
+			for (const element of e1) {
+				if (BPP8) {
+					writeBuf8(element);
+				} else {
+					writeBuf16(element);
+				}
 			}
 		}
 	}
