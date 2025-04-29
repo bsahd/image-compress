@@ -4,9 +4,12 @@ import fs from "fs/promises";
 import { BPP8, img2buf } from "./binfmt.js";
 
 function rgbToYuvNorm([r, g, b]) {
-	const Y = 0.299 * r + 0.587 * g + 0.114 * b;
-	const U = -0.169 * r - 0.331 * g + 0.5 * b + 128;
-	const V = 0.5 * r - 0.419 * g - 0.081 * b + 128;
+	// const Y = 0.299 * r + 0.587 * g + 0.114 * b;
+	// const U = -0.169 * r - 0.331 * g + 0.5 * b + 128;
+	// const V = 0.5 * r - 0.419 * g - 0.081 * b + 128;
+	const Y = (77 * r + 150 * g + 29 * b) >> 8;
+	const U = ((-43 * r - 85 * g + 128 * b) >> 8) + 128;
+	const V = ((128 * r - 107 * g - 21 * b) >> 8) + 128;
 	return [Y, U, V];
 }
 
@@ -49,6 +52,7 @@ async function processImage(imagePath) {
 
 		// 画像のピクセルデータを取得
 		const rawData = await image.raw().toBuffer();
+		console.log(`total ${(width * height) / 64} blocks`);
 
 		// 画像のピクセルデータを8x8ブロックごとに処理
 		for (let y = 0; y < height; y += 8) {
@@ -108,8 +112,18 @@ async function processImage(imagePath) {
 					blockminv,
 					nblock4bn,
 				});
+				process.stdout.write(
+					new TextEncoder().encode(
+						`\rprocessing... ${imgdata.blocks.length
+							.toString()
+							.padStart(((width * height) / 64).toString().length)}/${
+							(width * height) / 64
+						}block`
+					)
+				);
 			}
 		}
+		console.log("\ndone. writing...");
 		await fs.writeFile(process.argv[3], img2buf(imgdata));
 		// await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
 	} catch (error) {
