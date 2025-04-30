@@ -46,7 +46,9 @@ export function buf2img(buf) {
 	return img;
 }
 export function img2buf(img) {
-	const buffer = Buffer.alloc(img.blocks.length * (BPP8 ? 64 + 6 : 128 + 6) + 8);
+	const buffer = Buffer.alloc(
+		img.blocks.length * (BPP8 ? 64 + 6 : 128 + 6) + 8,
+	);
 	let writeHead = 0;
 	function writeBuf32(a) {
 		buffer.writeInt32BE(a, writeHead);

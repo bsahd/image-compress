@@ -67,35 +67,41 @@ async function processImage(imagePath) {
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
 				let blockmaxy = Math.ceil(
-					Math.max(...blockyuv.map((x) => x.map((y) => y[0])).flat())
+					Math.max(...blockyuv.map((x) => x.map((y) => y[0])).flat()),
 				);
 				if (blockmaxy == 256) blockmaxy = 255;
 				const blockminy = Math.floor(
-					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat())
+					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat()),
 				);
 				const blockdrangey = blockmaxy - blockminy;
 				let blockmaxu = Math.ceil(
-					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat())
+					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat()),
 				);
 				if (blockmaxu == 256) blockmaxu = 255;
 				const blockminu = Math.floor(
-					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat())
+					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat()),
 				);
 				const blockdrangeu = blockmaxu - blockminu;
 				let blockmaxv = Math.ceil(
-					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat())
+					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat()),
 				);
 				if (blockmaxv == 256) blockmaxv = 255;
 				const blockminv = Math.floor(
-					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat())
+					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat()),
 				);
 				const blockdrangev = blockmaxv - blockminv;
 				const nblock = blockyuv.map((x) =>
 					x.map(([cy, cu, cv]) => [
-						blockdrangey < COMPRESS_LEVEL / 2 ? 0.75 : (cy - blockminy) / blockdrangey,
-						blockdrangeu < COMPRESS_LEVEL ? 0.5 : (cu - blockminu) / blockdrangeu,
-						blockdrangev < COMPRESS_LEVEL ? 0.5 : (cv - blockminv) / blockdrangev,
-					])
+						blockdrangey < COMPRESS_LEVEL / 2
+							? 0.75
+							: (cy - blockminy) / blockdrangey,
+						blockdrangeu < COMPRESS_LEVEL
+							? 0.5
+							: (cu - blockminu) / blockdrangeu,
+						blockdrangev < COMPRESS_LEVEL
+							? 0.5
+							: (cv - blockminv) / blockdrangev,
+					]),
 				);
 				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
@@ -115,7 +121,7 @@ async function processImage(imagePath) {
 					});
 				});
 				const nblock4bn = nblock4b.map((x) =>
-					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b)
+					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b),
 				);
 				if (nblock4bn.flat().some((a) => a > 255)) {
 					console.log(nblock4b);
@@ -135,8 +141,8 @@ async function processImage(imagePath) {
 					new TextEncoder().encode(
 						`\rprocessing... ${doneb
 							.toString()
-							.padStart(blockcount.toString().length)}/${blockcount}block`
-					)
+							.padStart(blockcount.toString().length)}/${blockcount}block`,
+					),
 				);
 			}
 		}

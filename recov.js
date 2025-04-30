@@ -20,9 +20,17 @@ async function reconstructImage({ width, height, blocks }) {
 	let x = -8;
 	let y = 0;
 	blocks.forEach(
-		({ nblock4bn, blockmaxy, blockminy, blockmaxu, blockminu, blockmaxv, blockminv }) => {
+		({
+			nblock4bn,
+			blockmaxy,
+			blockminy,
+			blockmaxu,
+			blockminu,
+			blockmaxv,
+			blockminv,
+		}) => {
 			x += 8;
-			if(x==width){
+			if (x == width) {
 				y += 8;
 				x = 0;
 			}
@@ -33,7 +41,7 @@ async function reconstructImage({ width, height, blocks }) {
 					const pixelY = y + blockY;
 					const oy = Math.floor(nblock4bn[blockY][blockX] / (BPP8 ? 16 : 256));
 					const ou = Math.floor(
-						(nblock4bn[blockY][blockX] % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)
+						(nblock4bn[blockY][blockX] % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16),
 					);
 					const ov = Math.floor(nblock4bn[blockY][blockX] % (BPP8 ? 4 : 16));
 					const dy = pixdelta(prevpix[0], oy, 16);
@@ -41,9 +49,12 @@ async function reconstructImage({ width, height, blocks }) {
 					const dv = pixdelta(prevpix[2], ov, 4);
 					prevpix = [dy, du, dv];
 					// 正規化された値を元に戻す
-					const cy = (dy / (BPP8 ? 15 : 15)) * (blockmaxy - blockminy) + blockminy;
-					const cu = (du / (BPP8 ? 3 : 15)) * (blockmaxu - blockminu) + blockminu;
-					const cv = (dv / (BPP8 ? 3 : 15)) * (blockmaxv - blockminv) + blockminv;
+					const cy =
+						(dy / (BPP8 ? 15 : 15)) * (blockmaxy - blockminy) + blockminy;
+					const cu =
+						(du / (BPP8 ? 3 : 15)) * (blockmaxu - blockminu) + blockminu;
+					const cv =
+						(dv / (BPP8 ? 3 : 15)) * (blockmaxv - blockminv) + blockminv;
 					const [r, g, b] = yuvToRgbNorm([cy, cu, cv]);
 					const cr = r < 0 ? 0 : r > 255 ? 255 : r;
 					const cg = g < 0 ? 0 : g > 255 ? 255 : g;
@@ -56,19 +67,21 @@ async function reconstructImage({ width, height, blocks }) {
 					resultBuffer[offset + 2] = cb;
 				}
 			}
-			doneb++
+			doneb++;
 			process.stdout.write(
 				new TextEncoder().encode(
 					`\rprocessing... ${doneb
 						.toString()
-						.padStart(blocks.length.toString().length)}/${blocks.length}block`
-				)
+						.padStart(blocks.length.toString().length)}/${blocks.length}block`,
+				),
 			);
-		}
+		},
 	);
 
 	// 新しい画像を保存
-	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(process.argv[3]);
+	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
+		process.argv[3],
+	);
 	console.log("画像が再構築されました。");
 }
 
