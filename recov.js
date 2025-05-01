@@ -45,7 +45,7 @@ async function reconstructImage({ width, height, blocks }) {
 					const pixelY = y + blockY;
 					const oy = Math.floor(nblock4bn[blockY][blockX] / (BPP8 ? 16 : 256));
 					const ou = Math.floor(
-						(nblock4bn[blockY][blockX] % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16),
+						(nblock4bn[blockY][blockX] % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)
 					);
 					const ov = Math.floor(nblock4bn[blockY][blockX] % (BPP8 ? 4 : 16));
 					const dy = pixdelta(prevpix[0], oy, 16);
@@ -61,13 +61,32 @@ async function reconstructImage({ width, height, blocks }) {
 						const bottom = bl * (1 - u) + br * u;
 						return top * (1 - v) + bottom * v;
 					};
+					const cornersOrig = corners.map((a) => {
+						const oy =
+							(Math.floor(a / (BPP8 ? 16 : 256)) / 15) *
+								(blockmaxy - blockminy) +
+							blockminy;
+						const ou =
+							(Math.floor((a % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)) /
+								(BPP8 ? 3 : 15)) *
+								(blockmaxu - blockminu) +
+							blockminu;
+						const ov =
+							(Math.floor(a % (BPP8 ? 4 : 16)) / (BPP8 ? 3 : 15)) *
+								(blockmaxv - blockminv) +
+							blockminv;
+						return [oy, ou, ov];
+					});
 
-					const cy =interpolatey?interpolate(...corners.map(a=>a[0])):
-						(dy / (BPP8 ? 15 : 15)) * (blockmaxy - blockminy) + blockminy;
-					const cu =interpolateu?interpolate(...corners.map(a=>a[1])):
-						(du / (BPP8 ? 3 : 15)) * (blockmaxu - blockminu) + blockminu;
-					const cv =interpolatev?interpolate(...corners.map(a=>a[2])):
-						(dv / (BPP8 ? 3 : 15)) * (blockmaxv - blockminv) + blockminv;
+					const cy = interpolatey
+						? interpolate(...cornersOrig.map((a) => a[0]))
+						: (dy / (BPP8 ? 15 : 15)) * (blockmaxy - blockminy) + blockminy;
+					const cu = interpolateu
+						? interpolate(...cornersOrig.map((a) => a[1]))
+						: (du / (BPP8 ? 3 : 15)) * (blockmaxu - blockminu) + blockminu;
+					const cv = interpolatev
+						? interpolate(...cornersOrig.map((a) => a[2]))
+						: (dv / (BPP8 ? 3 : 15)) * (blockmaxv - blockminv) + blockminv;
 					const [r, g, b] = yuvToRgbNorm([cy, cu, cv]);
 					const cr = r < 0 ? 0 : r > 255 ? 255 : r;
 					const cg = g < 0 ? 0 : g > 255 ? 255 : g;
@@ -85,15 +104,15 @@ async function reconstructImage({ width, height, blocks }) {
 				new TextEncoder().encode(
 					`\rprocessing... ${doneb
 						.toString()
-						.padStart(blocks.length.toString().length)}/${blocks.length}block`,
-				),
+						.padStart(blocks.length.toString().length)}/${blocks.length}block`
+				)
 			);
-		},
+		}
 	);
 
 	// 新しい画像を保存
 	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
-		process.argv[3],
+		process.argv[3]
 	);
 	console.log("画像が再構築されました。");
 }

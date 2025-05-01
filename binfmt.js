@@ -29,12 +29,16 @@ export function buf2img(buf) {
 		elem.blockmaxv = readBuf8();
 		elem.blockminv = readBuf8();
 		img.blocks.push(elem);
-		elem.interpolatey = readBuf8() == 1;
-		elem.interpolateu = readBuf8() == 1;
-		elem.interpolatev = readBuf8() == 1;
+		const interpolaten = readBuf8();
+		elem.interpolatey = interpolaten >= 4;
+		elem.interpolateu = interpolaten % 4 >= 2;
+		elem.interpolatev = interpolaten % 2 == 1;
 		elem.corners = [];
+	}
+	for (let index = 0; index < blockcount; index++) {
+		const elem = img.blocks[index];
 		for (let index = 0; index < 4; index++) {
-			elem.corners.push([readBuf8(), readBuf8(), readBuf8()]);
+			elem.corners.push(readBuf8());
 		}
 	}
 	for (let index = 0; index < blockcount; index++) {
@@ -54,7 +58,7 @@ export function buf2img(buf) {
 }
 export function img2buf(img) {
 	const buffer = Buffer.alloc(
-		img.blocks.length * (BPP8 ? 64 + 9 + 12 : 128 + 9 + 12) + 8,
+		img.blocks.length * (BPP8 ? 64 + 7 + 4 : 128 + 9 + 12) + 8
 	);
 	let writeHead = 0;
 	function writeBuf32(a) {
@@ -85,13 +89,15 @@ export function img2buf(img) {
 		writeBuf8(block.blockminu);
 		writeBuf8(block.blockmaxv);
 		writeBuf8(block.blockminv);
-		writeBuf8(block.interpolatey ? 1 : 0);
-		writeBuf8(block.interpolateu ? 1 : 0);
-		writeBuf8(block.interpolatev ? 1 : 0);
+		writeBuf8(
+			(block.interpolatey ? 4 : 0) +
+				(block.interpolateu ? 2 : 0) +
+				(block.interpolatev ? 1 : 0)
+		);
+	}
+	for (const block of img.blocks) {
 		for (const corner of block.corners) {
-			writeBuf8(corner[0]);
-			writeBuf8(corner[1]);
-			writeBuf8(corner[2]);
+			writeBuf8(corner);
 		}
 	}
 	for (const block of img.blocks) {

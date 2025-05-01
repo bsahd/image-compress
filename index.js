@@ -60,7 +60,7 @@ async function processImage(imagePath) {
 		 * @prop {boolean} interpolatey
 		 * @prop {boolean} interpolateu
 		 * @prop {boolean} interpolatev
-		 * @prop {number[][]} corners
+		 * @prop {number[]} corners
 		 */
 		/** @type {{width:number,height:number,blocks:block[]}} */
 		const imgdata = {
@@ -130,6 +130,34 @@ async function processImage(imagePath) {
 				const nblock4bn = nblock4b.map((x) =>
 					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b)
 				);
+				const corners = [
+					blockyuv[0][0],
+					blockyuv[0][7],
+					blockyuv[7][0],
+					blockyuv[7][7],
+				]
+					.map(([cy, cu, cv]) => [
+						(cy - blockminy) / blockdrangey,
+						(cu - blockminu) / blockdrangeu,
+						(cv - blockminv) / blockdrangev,
+					])
+					.map(([cy, cu, cv], y) => {
+						const qy =
+							blockdrangey < COMPRESS_LEVEL / 2
+								? Math.floor(cy * (BPP8 ? 15.9 : 15.9))
+								: 0;
+						const qu =
+							blockdrangeu < COMPRESS_LEVEL
+								? Math.floor(cu * (BPP8 ? 3.9 : 15.9))
+								: 0;
+						const qv =
+							blockdrangev < COMPRESS_LEVEL
+								? Math.floor(cv * (BPP8 ? 3.9 : 15.9))
+								: 0;
+						const res = [qy, qu, qv];
+						return res;
+					})
+					.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b);
 				if (nblock4bn.flat().some((a) => a > 255)) {
 					console.log(nblock4b);
 					throw new Error(`Overflow detected at block (${x},${y})`);
@@ -145,12 +173,7 @@ async function processImage(imagePath) {
 					interpolatey: blockdrangey < COMPRESS_LEVEL / 2,
 					interpolateu: blockdrangeu < COMPRESS_LEVEL,
 					interpolatev: blockdrangev < COMPRESS_LEVEL,
-					corners: [
-						blockyuv[0][0],
-						blockyuv[0][7],
-						blockyuv[7][0],
-						blockyuv[7][7],
-					],
+					corners,
 				});
 				doneb++;
 				process.stdout.write(
