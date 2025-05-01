@@ -79,41 +79,19 @@ async function processImage(imagePath) {
 				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(blockyuv, 1);
 				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(blockyuv, 2);
 				const nblock = blockyuv.map((x, yi) =>
-					x.map(([cy, cu, cv], xi) => {
-						const u = xi / 7;
-						const v = yi / 7;
-
-						const interpolate = (tl, tr, bl, br) => {
-							const top = tl * (1 - u) + tr * u;
-							const bottom = bl * (1 - u) + br * u;
-							return top * (1 - v) + bottom * v;
-						};
-
-						const yGrad = interpolate(
-							blockyuv[0][0][0], blockyuv[0][7][0],
-							blockyuv[7][0][0], blockyuv[7][7][0]
-						);
-						const uGrad = interpolate(
-							blockyuv[0][0][1], blockyuv[0][7][1],
-							blockyuv[7][0][1], blockyuv[7][7][1]
-						);
-						const vGrad = interpolate(
-							blockyuv[0][0][2], blockyuv[0][7][2],
-							blockyuv[7][0][2], blockyuv[7][7][2]
-						);
-
-						return [
+					x.map(([cy, cu, cv], xi) =>
+						[
 							blockdrangey < COMPRESS_LEVEL / 2
-							? (yGrad - blockminy) / blockdrangey
+							? 0
 							: (cy - blockminy) / blockdrangey,
 						  blockdrangeu < COMPRESS_LEVEL
-						  ? (uGrad - blockminu) / blockdrangeu
+						  ? 0
 						  : (cu - blockminu) / blockdrangeu,
 						  blockdrangev < COMPRESS_LEVEL
-						  ? (vGrad - blockminv) / blockdrangev
+						  ? 0
 						  : (cv - blockminv) / blockdrangev,
-						];
-					}),
+						]
+					),
 				);
 				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
@@ -147,6 +125,11 @@ async function processImage(imagePath) {
 					blockmaxv,
 					blockminv,
 					nblock4bn,
+					interpolatey:blockdrangey < COMPRESS_LEVEL/2,
+					interpolateu:blockdrangeu < COMPRESS_LEVEL,
+					interpolatev:blockdrangev < COMPRESS_LEVEL,
+					corners:[blockyuv[0][0], blockyuv[0][7],
+					blockyuv[7][0], blockyuv[7][7]]
 				});
 				doneb++;
 				process.stdout.write(
@@ -159,8 +142,8 @@ async function processImage(imagePath) {
 			}
 		}
 		console.log("\ndone. writing...");
-		await fs.writeFile(process.argv[3], img2buf(imgdata));
-		// await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
+		// await fs.writeFile(process.argv[3], img2buf(imgdata));
+		await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
 	} catch (error) {
 		console.error("画像の処理中にエラーが発生しました:", error);
 	}

@@ -28,6 +28,10 @@ async function reconstructImage({ width, height, blocks }) {
 			blockminu,
 			blockmaxv,
 			blockminv,
+			interpolatey,
+			interpolateu,
+			interpolatev,
+			corners,
 		}) => {
 			x += 8;
 			if (x == width) {
@@ -49,11 +53,20 @@ async function reconstructImage({ width, height, blocks }) {
 					const dv = pixdelta(prevpix[2], ov, 4);
 					prevpix = [dy, du, dv];
 					// 正規化された値を元に戻す
-					const cy =
+					const u = blockX / 7;
+					const v = blockY / 7;
+
+					const interpolate = (tl, tr, bl, br) => {
+						const top = tl * (1 - u) + tr * u;
+						const bottom = bl * (1 - u) + br * u;
+						return top * (1 - v) + bottom * v;
+					};
+
+					const cy =interpolatey?interpolate(...corners.map(a=>a[0])):
 						(dy / (BPP8 ? 15 : 15)) * (blockmaxy - blockminy) + blockminy;
-					const cu =
+					const cu =interpolateu?interpolate(...corners.map(a=>a[1])):
 						(du / (BPP8 ? 3 : 15)) * (blockmaxu - blockminu) + blockminu;
-					const cv =
+					const cv =interpolatev?interpolate(...corners.map(a=>a[2])):
 						(dv / (BPP8 ? 3 : 15)) * (blockmaxv - blockminv) + blockminv;
 					const [r, g, b] = yuvToRgbNorm([cy, cu, cv]);
 					const cr = r < 0 ? 0 : r > 255 ? 255 : r;
@@ -85,5 +98,5 @@ async function reconstructImage({ width, height, blocks }) {
 	console.log("画像が再構築されました。");
 }
 
-reconstructImage(buf2img(await fs.readFile(process.argv[2])));
-// reconstructImage(JSON.parse(await fs.readFile(process.argv[2])));
+// reconstructImage(buf2img(await fs.readFile(process.argv[2])));
+reconstructImage(JSON.parse(await fs.readFile(process.argv[2])));
