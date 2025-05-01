@@ -39,6 +39,22 @@ async function reconstructImage({ width, height, blocks }) {
 				x = 0;
 			}
 			let prevpix = [0, 0, 0];
+
+			const cornersOrig = corners.map((a) => {
+				const oy =
+					(Math.floor(a / (BPP8 ? 16 : 256)) / 15) * (blockmaxy - blockminy) +
+					blockminy;
+				const ou =
+					(Math.floor((a % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)) /
+						(BPP8 ? 3 : 15)) *
+						(blockmaxu - blockminu) +
+					blockminu;
+				const ov =
+					(Math.floor(a % (BPP8 ? 4 : 16)) / (BPP8 ? 3 : 15)) *
+						(blockmaxv - blockminv) +
+					blockminv;
+				return [oy, ou, ov];
+			});
 			for (let blockY = 0; blockY < 8; blockY++) {
 				for (let blockX = 0; blockX < 8; blockX++) {
 					const pixelX = x + blockX;
@@ -61,22 +77,6 @@ async function reconstructImage({ width, height, blocks }) {
 						const bottom = bl * (1 - u) + br * u;
 						return top * (1 - v) + bottom * v;
 					};
-					const cornersOrig = corners.map((a) => {
-						const oy =
-							(Math.floor(a / (BPP8 ? 16 : 256)) / 15) *
-								(blockmaxy - blockminy) +
-							blockminy;
-						const ou =
-							(Math.floor((a % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)) /
-								(BPP8 ? 3 : 15)) *
-								(blockmaxu - blockminu) +
-							blockminu;
-						const ov =
-							(Math.floor(a % (BPP8 ? 4 : 16)) / (BPP8 ? 3 : 15)) *
-								(blockmaxv - blockminv) +
-							blockminv;
-						return [oy, ou, ov];
-					});
 
 					const cy = interpolatey
 						? interpolate(...cornersOrig.map((a) => a[0]))
