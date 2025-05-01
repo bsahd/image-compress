@@ -90,18 +90,41 @@ async function processImage(imagePath) {
 					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat()),
 				);
 				const blockdrangev = blockmaxv - blockminv;
-				const nblock = blockyuv.map((x) =>
-					x.map(([cy, cu, cv]) => [
-						blockdrangey < COMPRESS_LEVEL / 2
-							? 0.75
-							: (cy - blockminy) / blockdrangey,
-						blockdrangeu < COMPRESS_LEVEL
-							? 0.5
-							: (cu - blockminu) / blockdrangeu,
-						blockdrangev < COMPRESS_LEVEL
-							? 0.5
-							: (cv - blockminv) / blockdrangev,
-					]),
+				const nblock = blockyuv.map((x, yi) =>
+					x.map(([cy, cu, cv], xi) => {
+						const gradientTopY =
+							blockyuv[0][0][0] * (1 - xi / 7) + blockyuv[0][7][0] * (xi / 7);
+						const gradientBottomY =
+							blockyuv[7][0][0] * (1 - xi / 7) + blockyuv[7][7][0] * (xi / 7);
+						const gradientTopU =
+							blockyuv[0][0][1] * (1 - xi / 7) + blockyuv[0][7][1] * (xi / 7);
+						const gradientBottomU =
+							blockyuv[7][0][1] * (1 - xi / 7) + blockyuv[7][7][1] * (xi / 7);
+						const gradientTopV =
+							blockyuv[0][0][2] * (1 - xi / 7) + blockyuv[0][7][2] * (xi / 7);
+						const gradientBottomV =
+							blockyuv[7][0][2] * (1 - xi / 7) + blockyuv[7][7][2] * (xi / 7);
+						return [
+							blockdrangey < COMPRESS_LEVEL / 2
+								? (gradientTopY * (1 - yi / 7) +
+										gradientBottomY * (yi / 7) -
+										blockminy) /
+									blockdrangey
+								: (cy - blockminy) / blockdrangey,
+							blockdrangeu < COMPRESS_LEVEL
+								? (gradientTopU * (1 - yi / 7) +
+										gradientBottomU * (yi / 7) -
+										blockminu) /
+									blockdrangeu
+								: (cu - blockminu) / blockdrangeu,
+							blockdrangev < COMPRESS_LEVEL
+								? (gradientTopV * (1 - yi / 7) +
+										gradientBottomV * (yi / 7) -
+										blockminv) /
+									blockdrangev
+								: (cv - blockminv) / blockdrangev,
+						];
+					}),
 				);
 				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
