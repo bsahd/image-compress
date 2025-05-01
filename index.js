@@ -48,7 +48,21 @@ async function processImage(imagePath) {
 			height += padBottom;
 			console.log("extended", width, height);
 		}
-		/** @type {{width:number,height:number,blocks:{nblock4bn:number[][],blockmaxy:number,blockminy:number,blockmaxu:number,blockminu:number,blockmaxv:number,blockminv:number}[]}} */
+		/**
+		 * @typedef block
+		 * @prop {number[][]} nblock4bn
+		 * @prop {number} blockmaxy
+		 * @prop {number} blockminy
+		 * @prop {number} blockmaxu
+		 * @prop {number} blockminu
+		 * @prop {number} blockmaxv
+		 * @prop {number} blockminv
+		 * @prop {boolean} interpolatey
+		 * @prop {boolean} interpolateu
+		 * @prop {boolean} interpolatev
+		 * @prop {number[][]} corners
+		 */
+		/** @type {{width:number,height:number,blocks:block[]}} */
 		const imgdata = {
 			width,
 			height,
@@ -67,7 +81,7 @@ async function processImage(imagePath) {
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
 				const getChannelStats = (block, channel) => {
-					const values = block.flatMap(row => row.map(px => px[channel]));
+					const values = block.flatMap((row) => row.map((px) => px[channel]));
 					let max = Math.ceil(Math.max(...values));
 					if (max === 256) max = 255;
 					const min = Math.floor(Math.min(...values));
@@ -75,23 +89,26 @@ async function processImage(imagePath) {
 					return [min, max, drange];
 				};
 
-				const [blockminy, blockmaxy, blockdrangey] = getChannelStats(blockyuv, 0);
-				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(blockyuv, 1);
-				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(blockyuv, 2);
+				const [blockminy, blockmaxy, blockdrangey] = getChannelStats(
+					blockyuv,
+					0
+				);
+				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(
+					blockyuv,
+					1
+				);
+				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(
+					blockyuv,
+					2
+				);
 				const nblock = blockyuv.map((x, yi) =>
-					x.map(([cy, cu, cv], xi) =>
-						[
-							blockdrangey < COMPRESS_LEVEL / 2
+					x.map(([cy, cu, cv], xi) => [
+						blockdrangey < COMPRESS_LEVEL / 2
 							? 0
 							: (cy - blockminy) / blockdrangey,
-						  blockdrangeu < COMPRESS_LEVEL
-						  ? 0
-						  : (cu - blockminu) / blockdrangeu,
-						  blockdrangev < COMPRESS_LEVEL
-						  ? 0
-						  : (cv - blockminv) / blockdrangev,
-						]
-					),
+						blockdrangeu < COMPRESS_LEVEL ? 0 : (cu - blockminu) / blockdrangeu,
+						blockdrangev < COMPRESS_LEVEL ? 0 : (cv - blockminv) / blockdrangev,
+					])
 				);
 				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
@@ -111,7 +128,7 @@ async function processImage(imagePath) {
 					});
 				});
 				const nblock4bn = nblock4b.map((x) =>
-					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b),
+					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b)
 				);
 				if (nblock4bn.flat().some((a) => a > 255)) {
 					console.log(nblock4b);
@@ -125,19 +142,23 @@ async function processImage(imagePath) {
 					blockmaxv,
 					blockminv,
 					nblock4bn,
-					interpolatey:blockdrangey < COMPRESS_LEVEL/2,
-					interpolateu:blockdrangeu < COMPRESS_LEVEL,
-					interpolatev:blockdrangev < COMPRESS_LEVEL,
-					corners:[blockyuv[0][0], blockyuv[0][7],
-					blockyuv[7][0], blockyuv[7][7]]
+					interpolatey: blockdrangey < COMPRESS_LEVEL / 2,
+					interpolateu: blockdrangeu < COMPRESS_LEVEL,
+					interpolatev: blockdrangev < COMPRESS_LEVEL,
+					corners: [
+						blockyuv[0][0],
+						blockyuv[0][7],
+						blockyuv[7][0],
+						blockyuv[7][7],
+					],
 				});
 				doneb++;
 				process.stdout.write(
 					new TextEncoder().encode(
 						`\rprocessing... ${doneb
 							.toString()
-							.padStart(blockcount.toString().length)}/${blockcount}block`,
-					),
+							.padStart(blockcount.toString().length)}/${blockcount}block`
+					)
 				);
 			}
 		}
