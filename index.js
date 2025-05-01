@@ -66,63 +66,52 @@ async function processImage(imagePath) {
 				// 8x8の範囲を取り出して処理
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
-				let blockmaxy = Math.ceil(
-					Math.max(...blockyuv.map((x) => x.map((y) => y[0])).flat()),
-				);
-				if (blockmaxy == 256) blockmaxy = 255;
-				const blockminy = Math.floor(
-					Math.min(...blockyuv.map((x) => x.map((y) => y[0])).flat()),
-				);
-				const blockdrangey = blockmaxy - blockminy;
-				let blockmaxu = Math.ceil(
-					Math.max(...blockyuv.map((x) => x.map((y) => y[1])).flat()),
-				);
-				if (blockmaxu == 256) blockmaxu = 255;
-				const blockminu = Math.floor(
-					Math.min(...blockyuv.map((x) => x.map((y) => y[1])).flat()),
-				);
-				const blockdrangeu = blockmaxu - blockminu;
-				let blockmaxv = Math.ceil(
-					Math.max(...blockyuv.map((x) => x.map((y) => y[2])).flat()),
-				);
-				if (blockmaxv == 256) blockmaxv = 255;
-				const blockminv = Math.floor(
-					Math.min(...blockyuv.map((x) => x.map((y) => y[2])).flat()),
-				);
-				const blockdrangev = blockmaxv - blockminv;
+				const getChannelStats = (block, channel) => {
+					const values = block.flatMap(row => row.map(px => px[channel]));
+					let max = Math.ceil(Math.max(...values));
+					if (max === 256) max = 255;
+					const min = Math.floor(Math.min(...values));
+					const drange = max - min;
+					return [min, max, drange];
+				};
+
+				const [blockminy, blockmaxy, blockdrangey] = getChannelStats(blockyuv, 0);
+				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(blockyuv, 1);
+				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(blockyuv, 2);
 				const nblock = blockyuv.map((x, yi) =>
 					x.map(([cy, cu, cv], xi) => {
-						const gradientTopY =
-							blockyuv[0][0][0] * (1 - xi / 7) + blockyuv[0][7][0] * (xi / 7);
-						const gradientBottomY =
-							blockyuv[7][0][0] * (1 - xi / 7) + blockyuv[7][7][0] * (xi / 7);
-						const gradientTopU =
-							blockyuv[0][0][1] * (1 - xi / 7) + blockyuv[0][7][1] * (xi / 7);
-						const gradientBottomU =
-							blockyuv[7][0][1] * (1 - xi / 7) + blockyuv[7][7][1] * (xi / 7);
-						const gradientTopV =
-							blockyuv[0][0][2] * (1 - xi / 7) + blockyuv[0][7][2] * (xi / 7);
-						const gradientBottomV =
-							blockyuv[7][0][2] * (1 - xi / 7) + blockyuv[7][7][2] * (xi / 7);
+						const u = xi / 7;
+						const v = yi / 7;
+
+						const interpolate = (tl, tr, bl, br) => {
+							const top = tl * (1 - u) + tr * u;
+							const bottom = bl * (1 - u) + br * u;
+							return top * (1 - v) + bottom * v;
+						};
+
+						const yGrad = interpolate(
+							blockyuv[0][0][0], blockyuv[0][7][0],
+							blockyuv[7][0][0], blockyuv[7][7][0]
+						);
+						const uGrad = interpolate(
+							blockyuv[0][0][1], blockyuv[0][7][1],
+							blockyuv[7][0][1], blockyuv[7][7][1]
+						);
+						const vGrad = interpolate(
+							blockyuv[0][0][2], blockyuv[0][7][2],
+							blockyuv[7][0][2], blockyuv[7][7][2]
+						);
+
 						return [
 							blockdrangey < COMPRESS_LEVEL / 2
-								? (gradientTopY * (1 - yi / 7) +
-										gradientBottomY * (yi / 7) -
-										blockminy) /
-									blockdrangey
-								: (cy - blockminy) / blockdrangey,
-							blockdrangeu < COMPRESS_LEVEL
-								? (gradientTopU * (1 - yi / 7) +
-										gradientBottomU * (yi / 7) -
-										blockminu) /
-									blockdrangeu
-								: (cu - blockminu) / blockdrangeu,
-							blockdrangev < COMPRESS_LEVEL
-								? (gradientTopV * (1 - yi / 7) +
-										gradientBottomV * (yi / 7) -
-										blockminv) /
-									blockdrangev
-								: (cv - blockminv) / blockdrangev,
+							? (yGrad - blockminy) / blockdrangey
+							: (cy - blockminy) / blockdrangey,
+						  blockdrangeu < COMPRESS_LEVEL
+						  ? (uGrad - blockminu) / blockdrangeu
+						  : (cu - blockminu) / blockdrangeu,
+						  blockdrangev < COMPRESS_LEVEL
+						  ? (vGrad - blockminv) / blockdrangev
+						  : (cv - blockminv) / blockdrangev,
 						];
 					}),
 				);
