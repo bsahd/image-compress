@@ -142,8 +142,8 @@ async function processImage(imagePath) {
 			}
 		}
 		console.log("\ndone. writing...");
-		// await fs.writeFile(process.argv[3], img2buf(imgdata));
-		await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
+		await fs.writeFile(process.argv[3], img2buf(imgdata));
+		// await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
 	} catch (error) {
 		console.error("画像の処理中にエラーが発生しました:", error);
 	}
