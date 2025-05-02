@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import fs from "fs/promises";
 import { img2buf } from "./binfmt.js";
+import { ProgressBar } from "./progressbar.js";
 
 function rgbToYuvNorm([r, g, b]) {
 	const Y = 0.299 * r + 0.587 * g + 0.114 * b;
@@ -49,9 +50,10 @@ async function processImage(imagePath) {
 			blocks: [],
 		};
 		const rawData = await image.raw().removeAlpha().toBuffer();
-		console.log(`total ${(width * height) / 64} blocks`);
-		let doneb = 0;
-		const blockcount = (width * height) / 64;
+		const pb = new ProgressBar();
+		pb.title = "encoding...";
+		pb.max = (width * height) / 64 + 1;
+		pb.render();
 		for (let y = 0; y < height; y += 8) {
 			for (let x = 0; x < width; x += 8) {
 				const block = getBlock(rawData, width, x, y, 8, 8);
@@ -67,15 +69,15 @@ async function processImage(imagePath) {
 
 				const [blockminy, blockmaxy, blockdrangey] = getChannelStats(
 					blockyuv,
-					0,
+					0
 				);
 				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(
 					blockyuv,
-					1,
+					1
 				);
 				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(
 					blockyuv,
-					2,
+					2
 				);
 				const nblock = blockyuv.map((x, yi) =>
 					x.map(([cy, cu, cv], xi) => [
@@ -84,7 +86,7 @@ async function processImage(imagePath) {
 							: (cy - blockminy) / blockdrangey,
 						blockdrangeu < COMPRESS_LEVEL ? 0 : (cu - blockminu) / blockdrangeu,
 						blockdrangev < COMPRESS_LEVEL ? 0 : (cv - blockminv) / blockdrangev,
-					]),
+					])
 				);
 				let prevpix = [0, 0, 0];
 				const nblock4b = nblock.map((tileline, y) => {
@@ -103,7 +105,7 @@ async function processImage(imagePath) {
 					});
 				});
 				const nblock4bn = nblock4b.map((x) =>
-					x.map(([r, g, b]) => (r * 4 + g) * 4 + b),
+					x.map(([r, g, b]) => (r * 4 + g) * 4 + b)
 				);
 				const corners = [
 					blockyuv[0][0],
@@ -142,18 +144,12 @@ async function processImage(imagePath) {
 					interpolatev: blockdrangev < COMPRESS_LEVEL,
 					corners,
 				});
-				doneb++;
-				process.stdout.write(
-					new TextEncoder().encode(
-						`\rprocessing... ${doneb
-							.toString()
-							.padStart(blockcount.toString().length)}/${blockcount}block`,
-					),
-				);
+				pb.increment();
 			}
 		}
-		console.log("\ndone. writing...");
 		await fs.writeFile(process.argv[3], img2buf(imgdata));
+		pb.increment();
+		process.stderr.write("\n")
 		// await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
 	} catch (error) {
 		console.error("画像の処理中にエラーが発生しました:", error);

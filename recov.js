@@ -1,6 +1,7 @@
 import sharp from "sharp";
 import fs from "fs/promises";
 import { buf2img } from "./binfmt.js";
+import { ProgressBar } from "./progressbar.js";
 
 function yuvToRgbNorm([Y, U, V]) {
 	const R = Y + 1.402 * (V - 128);
@@ -11,10 +12,14 @@ function yuvToRgbNorm([Y, U, V]) {
 function pixdelta(prev, del, max) {
 	return (prev + del) % max;
 }
+
 // imgdataを元に画像を再構築する関数
 async function reconstructImage({ width, height, blocks }) {
 	const resultBuffer = Buffer.alloc(width * height * 3);
-	let doneb = 0;
+	const pb = new ProgressBar();
+	pb.title = "decoding...";
+	pb.max = blocks.length;
+	pb.render();
 	let x = -8;
 	let y = 0;
 	blocks.forEach(
@@ -61,12 +66,7 @@ async function reconstructImage({ width, height, blocks }) {
 					const u = blockX / 7;
 					const v = blockY / 7;
 
-					const interpolate = (
-						tl,
-						tr,
-						bl,
-						br
-					) => {
+					const interpolate = (tl, tr, bl, br) => {
 						const top = tl * (1 - u) + tr * u;
 						const bottom = bl * (1 - u) + br * u;
 						return top * (1 - v) + bottom * v;
@@ -92,21 +92,14 @@ async function reconstructImage({ width, height, blocks }) {
 					resultBuffer[offset + 2] = cb;
 				}
 			}
-			doneb++;
-			process.stdout.write(
-				new TextEncoder().encode(
-					`\rprocessing... ${doneb
-						.toString()
-						.padStart(blocks.length.toString().length)}/${blocks.length}block`
-				)
-			);
+			pb.increment();
 		}
 	);
 
 	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
 		process.argv[3]
 	);
-	console.log("画像が再構築されました。");
+	process.stderr.write("\n")
 }
 
 const buf = await fs.readFile(process.argv[2]);
