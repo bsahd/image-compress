@@ -26,6 +26,24 @@ function pixdelta(prev, del, max) {
 	return (prev + del) % max;
 }
 // imgdataを元に画像を再構築する関数
+/**
+ * @typedef block
+ * @prop {number[][]} nblock4bn
+ * @prop {number} blockmaxy
+ * @prop {number} blockminy
+ * @prop {number} blockmaxu
+ * @prop {number} blockminu
+ * @prop {number} blockmaxv
+ * @prop {number} blockminv
+ * @prop {boolean} interpolatey
+ * @prop {boolean} interpolateu
+ * @prop {boolean} interpolatev
+ * @prop {number[]} corners
+ */
+/**
+ *
+ * @param {{width:number,height:number,blocks:block[]}} param0
+ */
 async function reconstructImage({ width, height, blocks }) {
 	// 新しい画像用のバッファを作成
 	const resultBuffer = Buffer.alloc(width * height * 3);
@@ -82,7 +100,7 @@ async function reconstructImage({ width, height, blocks }) {
 						/** @type {number} */ tl,
 						/** @type {number} */ tr,
 						/** @type {number} */ bl,
-						/** @type {number} */ br,
+						/** @type {number} */ br
 					) => {
 						const top = tl * (1 - u) + tr * u;
 						const bottom = bl * (1 - u) + br * u;
@@ -115,15 +133,15 @@ async function reconstructImage({ width, height, blocks }) {
 				new TextEncoder().encode(
 					`\rprocessing... ${doneb
 						.toString()
-						.padStart(blocks.length.toString().length)}/${blocks.length}block`,
-				),
+						.padStart(blocks.length.toString().length)}/${blocks.length}block`
+				)
 			);
-		},
+		}
 	);
 
 	// 新しい画像を保存
 	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
-		process.argv[3],
+		process.argv[3]
 	);
 	console.log("画像が再構築されました。");
 }
