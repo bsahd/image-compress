@@ -1,6 +1,7 @@
+//@ts-check
 import sharp from "sharp";
 import fs from "fs/promises";
-import { BPP8, buf2img } from "./binfmt.js";
+import { buf2img } from "./binfmt.js";
 
 function yuvToRgbNorm([Y, U, V]) {
 	const R = Y + 1.402 * (V - 128);
@@ -42,28 +43,20 @@ async function reconstructImage({ width, height, blocks }) {
 
 			const cornersOrig = corners.map((a) => {
 				const oy =
-					(Math.floor(a / (BPP8 ? 16 : 256)) / 15) * (blockmaxy - blockminy) +
-					blockminy;
+					(Math.floor(a / 16) / 15) * (blockmaxy - blockminy) + blockminy;
 				const ou =
-					(Math.floor((a % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)) /
-						(BPP8 ? 3 : 15)) *
-						(blockmaxu - blockminu) +
-					blockminu;
+					(Math.floor((a % 16) / 4) / 3) * (blockmaxu - blockminu) + blockminu;
 				const ov =
-					(Math.floor(a % (BPP8 ? 4 : 16)) / (BPP8 ? 3 : 15)) *
-						(blockmaxv - blockminv) +
-					blockminv;
+					(Math.floor(a % 4) / 3) * (blockmaxv - blockminv) + blockminv;
 				return [oy, ou, ov];
 			});
 			for (let blockY = 0; blockY < 8; blockY++) {
 				for (let blockX = 0; blockX < 8; blockX++) {
 					const pixelX = x + blockX;
 					const pixelY = y + blockY;
-					const oy = Math.floor(nblock4bn[blockY][blockX] / (BPP8 ? 16 : 256));
-					const ou = Math.floor(
-						(nblock4bn[blockY][blockX] % (BPP8 ? 16 : 256)) / (BPP8 ? 4 : 16)
-					);
-					const ov = Math.floor(nblock4bn[blockY][blockX] % (BPP8 ? 4 : 16));
+					const oy = Math.floor(nblock4bn[blockY][blockX] / 16);
+					const ou = Math.floor((nblock4bn[blockY][blockX] % 16) / 4);
+					const ov = Math.floor(nblock4bn[blockY][blockX] % 4);
 					const dy = pixdelta(prevpix[0], oy, 16);
 					const du = pixdelta(prevpix[1], ou, 4);
 					const dv = pixdelta(prevpix[2], ov, 4);
@@ -80,13 +73,13 @@ async function reconstructImage({ width, height, blocks }) {
 
 					const cy = interpolatey
 						? interpolate(...cornersOrig.map((a) => a[0]))
-						: (dy / (BPP8 ? 15 : 15)) * (blockmaxy - blockminy) + blockminy;
+						: (dy / 15) * (blockmaxy - blockminy) + blockminy;
 					const cu = interpolateu
 						? interpolate(...cornersOrig.map((a) => a[1]))
-						: (du / (BPP8 ? 3 : 15)) * (blockmaxu - blockminu) + blockminu;
+						: (du / 3) * (blockmaxu - blockminu) + blockminu;
 					const cv = interpolatev
 						? interpolate(...cornersOrig.map((a) => a[2]))
-						: (dv / (BPP8 ? 3 : 15)) * (blockmaxv - blockminv) + blockminv;
+						: (dv / 3) * (blockmaxv - blockminv) + blockminv;
 					const [r, g, b] = yuvToRgbNorm([cy, cu, cv]);
 					const cr = r < 0 ? 0 : r > 255 ? 255 : r;
 					const cg = g < 0 ? 0 : g > 255 ? 255 : g;
@@ -104,15 +97,15 @@ async function reconstructImage({ width, height, blocks }) {
 				new TextEncoder().encode(
 					`\rprocessing... ${doneb
 						.toString()
-						.padStart(blocks.length.toString().length)}/${blocks.length}block`
-				)
+						.padStart(blocks.length.toString().length)}/${blocks.length}block`,
+				),
 			);
-		}
+		},
 	);
 
 	// 新しい画像を保存
 	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
-		process.argv[3]
+		process.argv[3],
 	);
 	console.log("画像が再構築されました。");
 }

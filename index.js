@@ -1,8 +1,13 @@
 //@ts-check
 import sharp from "sharp";
 import fs from "fs/promises";
-import { BPP8, img2buf } from "./binfmt.js";
+import { img2buf } from "./binfmt.js";
 
+/**
+ * convert rgb to yuv
+ * @param {[number,number,number]} param0 RGB color
+ * @returns {[number,number,number]} YUV color
+ */
 function rgbToYuvNorm([r, g, b]) {
 	const Y = 0.299 * r + 0.587 * g + 0.114 * b;
 	const U = -0.169 * r - 0.331 * g + 0.5 * b + 128;
@@ -10,6 +15,13 @@ function rgbToYuvNorm([r, g, b]) {
 	return [Y, U, V];
 }
 
+/**
+ * calculate delta of between pixel
+ * @param {number} prev previous quantized pixel
+ * @param {number} now current quantized pixel
+ * @param {number} max maximum number
+ * @returns {number} delta of between quantized pixel
+ */
 function pixdelta(prev, now, max) {
 	if (now >= prev) {
 		return now - prev;
@@ -19,6 +31,10 @@ function pixdelta(prev, now, max) {
 }
 const COMPRESS_LEVEL = parseInt(process.argv[4]);
 
+/**
+ *
+ * @param {string} imagePath
+ */
 async function processImage(imagePath) {
 	try {
 		// 画像を読み込む
@@ -91,15 +107,15 @@ async function processImage(imagePath) {
 
 				const [blockminy, blockmaxy, blockdrangey] = getChannelStats(
 					blockyuv,
-					0
+					0,
 				);
 				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(
 					blockyuv,
-					1
+					1,
 				);
 				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(
 					blockyuv,
-					2
+					2,
 				);
 				const nblock = blockyuv.map((x, yi) =>
 					x.map(([cy, cu, cv], xi) => [
@@ -108,27 +124,27 @@ async function processImage(imagePath) {
 							: (cy - blockminy) / blockdrangey,
 						blockdrangeu < COMPRESS_LEVEL ? 0 : (cu - blockminu) / blockdrangeu,
 						blockdrangev < COMPRESS_LEVEL ? 0 : (cv - blockminv) / blockdrangev,
-					])
+					]),
 				);
 				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
 				const nblock4b = nblock.map((tileline, y) => {
 					return tileline.map(([cy, cu, cv], x) => {
-						const qy = Math.floor(cy * (BPP8 ? 15.9 : 15.9));
-						const qu = Math.floor(cu * (BPP8 ? 3.9 : 15.9));
-						const qv = Math.floor(cv * (BPP8 ? 3.9 : 15.9));
+						const qy = Math.floor(cy * 15.9);
+						const qu = Math.floor(cu * 3.9);
+						const qv = Math.floor(cv * 3.9);
 						const res = [qy, qu, qv];
 						const resd = [
 							pixdelta(prevpix[0], qy, 16),
-							pixdelta(prevpix[1], qu, BPP8 ? 4 : 16),
-							pixdelta(prevpix[2], qv, BPP8 ? 4 : 16),
+							pixdelta(prevpix[1], qu, 4),
+							pixdelta(prevpix[2], qv, 4),
 						];
 						prevpix = res;
 						return resd;
 					});
 				});
 				const nblock4bn = nblock4b.map((x) =>
-					x.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b)
+					x.map(([r, g, b]) => (r * 4 + g) * 4 + b),
 				);
 				const corners = [
 					blockyuv[0][0],
@@ -143,21 +159,13 @@ async function processImage(imagePath) {
 					])
 					.map(([cy, cu, cv], y) => {
 						const qy =
-							blockdrangey < COMPRESS_LEVEL / 2
-								? Math.floor(cy * (BPP8 ? 15.9 : 15.9))
-								: 0;
-						const qu =
-							blockdrangeu < COMPRESS_LEVEL
-								? Math.floor(cu * (BPP8 ? 3.9 : 15.9))
-								: 0;
-						const qv =
-							blockdrangev < COMPRESS_LEVEL
-								? Math.floor(cv * (BPP8 ? 3.9 : 15.9))
-								: 0;
+							blockdrangey < COMPRESS_LEVEL / 2 ? Math.floor(cy * 15.9) : 0;
+						const qu = blockdrangeu < COMPRESS_LEVEL ? Math.floor(cu * 3.9) : 0;
+						const qv = blockdrangev < COMPRESS_LEVEL ? Math.floor(cv * 3.9) : 0;
 						const res = [qy, qu, qv];
 						return res;
 					})
-					.map(([r, g, b]) => (r * (BPP8 ? 4 : 16) + g) * (BPP8 ? 4 : 16) + b);
+					.map(([r, g, b]) => (r * 4 + g) * 4 + b);
 				if (nblock4bn.flat().some((a) => a > 255)) {
 					console.log(nblock4b);
 					throw new Error(`Overflow detected at block (${x},${y})`);
@@ -180,8 +188,8 @@ async function processImage(imagePath) {
 					new TextEncoder().encode(
 						`\rprocessing... ${doneb
 							.toString()
-							.padStart(blockcount.toString().length)}/${blockcount}block`
-					)
+							.padStart(blockcount.toString().length)}/${blockcount}block`,
+					),
 				);
 			}
 		}

@@ -1,5 +1,4 @@
-export const BPP8 = true;
-
+//@ts-check
 /**
  *
  * @param {DataView} buf
@@ -51,11 +50,7 @@ export function buf2img(buf) {
 		for (let i2 = 0; i2 < 8; i2++) {
 			elem.nblock4bn.push([]);
 			for (let i3 = 0; i3 < 8; i3++) {
-				if (BPP8) {
-					elem.nblock4bn.at(-1).push(readBuf8());
-				} else {
-					elem.nblock4bn.at(-1).push(readBuf16());
-				}
+				elem.nblock4bn.at(-1).push(readBuf8());
 			}
 		}
 	}
@@ -63,15 +58,15 @@ export function buf2img(buf) {
 }
 export function img2buf(img) {
 	const buffer = new DataView(
-		new ArrayBuffer(img.blocks.length * (BPP8 ? 64 + 7 + 4 : 128 + 9 + 12) + 8)
+		new ArrayBuffer(img.blocks.length * (64 + 7 + 4) + 8),
 	);
 	let writeHead = 0;
 	function writeBuf32(a) {
-		buffer.setInt32(writeHead,a);
+		buffer.setInt32(writeHead, a);
 		writeHead += 4;
 	}
 	function writeBuf16(a) {
-		buffer.setInt16(writeHead,a);
+		buffer.setInt16(writeHead, a);
 		writeHead += 2;
 	}
 	function writeBuf8(a) {
@@ -80,7 +75,7 @@ export function img2buf(img) {
 		// }else if(a<0){
 		// 	buffer.writeUInt8(0, writeHead);
 		// }else{
-		buffer.setUint8(writeHead,a);
+		buffer.setUint8(writeHead, a);
 		// }
 		writeHead++;
 	}
@@ -97,7 +92,7 @@ export function img2buf(img) {
 		writeBuf8(
 			(block.interpolatey ? 4 : 0) +
 				(block.interpolateu ? 2 : 0) +
-				(block.interpolatev ? 1 : 0)
+				(block.interpolatev ? 1 : 0),
 		);
 	}
 	for (const block of img.blocks) {
@@ -108,11 +103,7 @@ export function img2buf(img) {
 	for (const block of img.blocks) {
 		for (const e1 of block.nblock4bn) {
 			for (const element of e1) {
-				if (BPP8) {
-					writeBuf8(element);
-				} else {
-					writeBuf16(element);
-				}
+				writeBuf8(element);
 			}
 		}
 	}
