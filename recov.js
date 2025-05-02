@@ -76,7 +76,7 @@ async function reconstructImage({ width, height, blocks }) {
 			}
 			let prevpix = [0, 0, 0];
 
-			const cornersOrig = corners.map((/** @type {number} */ a) => {
+			const cornersOrig = corners.map((a) => {
 				const oy =
 					(Math.floor(a / 16) / 15) * (blockmaxy - blockminy) + blockminy;
 				const ou =
@@ -106,13 +106,13 @@ async function reconstructImage({ width, height, blocks }) {
 					};
 
 					const cy = interpolatey
-						? interpolate(...cornersOrig.map((/** @type {any[]} */ a) => a[0]))
+						? interpolate(...cornersOrig.map((a) => a[0]))
 						: (dy / 15) * (blockmaxy - blockminy) + blockminy;
 					const cu = interpolateu
-						? interpolate(...cornersOrig.map((/** @type {any[]} */ a) => a[1]))
+						? interpolate(...cornersOrig.map((a) => a[1]))
 						: (du / 3) * (blockmaxu - blockminu) + blockminu;
 					const cv = interpolatev
-						? interpolate(...cornersOrig.map((/** @type {any[]} */ a) => a[2]))
+						? interpolate(...cornersOrig.map((a) => a[2]))
 						: (dv / 3) * (blockmaxv - blockminv) + blockminv;
 					const [r, g, b] = yuvToRgbNorm([cy, cu, cv]);
 					const cr = r < 0 ? 0 : r > 255 ? 255 : r;

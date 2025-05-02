@@ -183,7 +183,6 @@ async function processImage(imagePath) {
 }
 
 function getBlock(rawData, width, startX, startY, blockWidth, blockHeight) {
-	/** @type {[number,number,number][][]} */
 	const result = [];
 	for (let y = startY; y < startY + blockHeight; y++) {
 		result.push([]);
