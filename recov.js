@@ -117,5 +117,6 @@ async function reconstructImage({ width, height, blocks }) {
 	console.log("画像が再構築されました。");
 }
 
-reconstructImage(buf2img(await fs.readFile(process.argv[2])));
+const buf = await fs.readFile(process.argv[2]);
+reconstructImage(buf2img(new DataView(buf.buffer)));
 // reconstructImage(JSON.parse(await fs.readFile(process.argv[2])));

@@ -1,19 +1,24 @@
 export const BPP8 = true;
 
+/**
+ *
+ * @param {DataView} buf
+ * @returns
+ */
 export function buf2img(buf) {
 	const img = {};
 	let readHead = 0;
 	function readBuf32() {
 		readHead += 4;
-		return buf.readInt32BE(readHead - 4);
+		return buf.getInt32(readHead - 4);
 	}
 	function readBuf16() {
 		readHead += 2;
-		return buf.readInt16BE(readHead - 2);
+		return buf.getInt16(readHead - 2);
 	}
 	function readBuf8() {
 		readHead++;
-		return buf.readUInt8(readHead - 1);
+		return buf.getUint8(readHead - 1);
 	}
 	img.width = readBuf16();
 	img.height = readBuf16();
@@ -57,16 +62,16 @@ export function buf2img(buf) {
 	return img;
 }
 export function img2buf(img) {
-	const buffer = Buffer.alloc(
-		img.blocks.length * (BPP8 ? 64 + 7 + 4 : 128 + 9 + 12) + 8
+	const buffer = new DataView(
+		new ArrayBuffer(img.blocks.length * (BPP8 ? 64 + 7 + 4 : 128 + 9 + 12) + 8)
 	);
 	let writeHead = 0;
 	function writeBuf32(a) {
-		buffer.writeInt32BE(a, writeHead);
+		buffer.setInt32(writeHead,a);
 		writeHead += 4;
 	}
 	function writeBuf16(a) {
-		buffer.writeInt16BE(a, writeHead);
+		buffer.setInt16(writeHead,a);
 		writeHead += 2;
 	}
 	function writeBuf8(a) {
@@ -75,7 +80,7 @@ export function img2buf(img) {
 		// }else if(a<0){
 		// 	buffer.writeUInt8(0, writeHead);
 		// }else{
-		buffer.writeUInt8(a, writeHead);
+		buffer.setUint8(writeHead,a);
 		// }
 		writeHead++;
 	}
