@@ -1,9 +1,3 @@
-//@ts-check
-/**
- *
- * @param {DataView} buf
- * @returns
- */
 export function buf2img(buf) {
 	const img = {};
 	let readHead = 0;
@@ -70,13 +64,7 @@ export function img2buf(img) {
 		writeHead += 2;
 	}
 	function writeBuf8(a) {
-		// if(a>255){
-		// 	buffer.writeUInt8(255, writeHead);
-		// }else if(a<0){
-		// 	buffer.writeUInt8(0, writeHead);
-		// }else{
 		buffer.setUint8(writeHead, a);
-		// }
 		writeHead++;
 	}
 	writeBuf16(img.width);

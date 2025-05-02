@@ -1,13 +1,7 @@
-//@ts-check
 import sharp from "sharp";
 import fs from "fs/promises";
 import { img2buf } from "./binfmt.js";
 
-/**
- * convert rgb to yuv
- * @param {[number,number,number]} param0 RGB color
- * @returns {[number,number,number]} YUV color
- */
 function rgbToYuvNorm([r, g, b]) {
 	const Y = 0.299 * r + 0.587 * g + 0.114 * b;
 	const U = -0.169 * r - 0.331 * g + 0.5 * b + 128;
@@ -15,13 +9,6 @@ function rgbToYuvNorm([r, g, b]) {
 	return [Y, U, V];
 }
 
-/**
- * calculate delta of between pixel
- * @param {number} prev previous quantized pixel
- * @param {number} now current quantized pixel
- * @param {number} max maximum number
- * @returns {number} delta of between quantized pixel
- */
 function pixdelta(prev, now, max) {
 	if (now >= prev) {
 		return now - prev;
@@ -31,16 +18,10 @@ function pixdelta(prev, now, max) {
 }
 const COMPRESS_LEVEL = parseInt(process.argv[4]);
 
-/**
- *
- * @param {string} imagePath
- */
 async function processImage(imagePath) {
 	try {
-		// 画像を読み込む
 		let image = sharp(imagePath);
 
-		// 画像のメタデータを取得（幅と高さを知りたい）
 		const metadata = await image.metadata();
 		if (!(metadata.width && metadata.height)) {
 			throw new Error("no width/height in metadata");
@@ -49,51 +30,30 @@ async function processImage(imagePath) {
 		let width = metadata.width;
 		let height = metadata.height;
 
-		// 8の倍数に丸める
 		const padRight = (8 - (width % 8)) % 8;
 		const padBottom = (8 - (height % 8)) % 8;
 
-		// 必要ならパディング
 		if (padRight || padBottom) {
 			image = image.extend({
 				right: padRight,
 				bottom: padBottom,
-				background: { r: 0, g: 0, b: 0 }, // 黒パディング
+				background: { r: 0, g: 0, b: 0 },
 			});
 			width += padRight;
 			height += padBottom;
 			console.log("extended", width, height);
 		}
-		/**
-		 * @typedef block
-		 * @prop {number[][]} nblock4bn
-		 * @prop {number} blockmaxy
-		 * @prop {number} blockminy
-		 * @prop {number} blockmaxu
-		 * @prop {number} blockminu
-		 * @prop {number} blockmaxv
-		 * @prop {number} blockminv
-		 * @prop {boolean} interpolatey
-		 * @prop {boolean} interpolateu
-		 * @prop {boolean} interpolatev
-		 * @prop {number[]} corners
-		 */
-		/** @type {{width:number,height:number,blocks:block[]}} */
 		const imgdata = {
 			width,
 			height,
 			blocks: [],
 		};
-
-		// 画像のピクセルデータを取得
 		const rawData = await image.raw().removeAlpha().toBuffer();
 		console.log(`total ${(width * height) / 64} blocks`);
 		let doneb = 0;
 		const blockcount = (width * height) / 64;
-		// 画像のピクセルデータを8x8ブロックごとに処理
 		for (let y = 0; y < height; y += 8) {
 			for (let x = 0; x < width; x += 8) {
-				// 8x8の範囲を取り出して処理
 				const block = getBlock(rawData, width, x, y, 8, 8);
 				const blockyuv = block.map((x) => x.map((y) => rgbToYuvNorm(y)));
 				const getChannelStats = (block, channel) => {
@@ -126,7 +86,6 @@ async function processImage(imagePath) {
 						blockdrangev < COMPRESS_LEVEL ? 0 : (cv - blockminv) / blockdrangev,
 					]),
 				);
-				/** @type {number[]} */
 				let prevpix = [0, 0, 0];
 				const nblock4b = nblock.map((tileline, y) => {
 					return tileline.map(([cy, cu, cv], x) => {
@@ -201,26 +160,20 @@ async function processImage(imagePath) {
 	}
 }
 
-// 8x8ブロックの処理
 function getBlock(rawData, width, startX, startY, blockWidth, blockHeight) {
 	/** @type {[number,number,number][][]} */
 	const result = [];
-	// ブロックのピクセルデータを取得
 	for (let y = startY; y < startY + blockHeight; y++) {
 		result.push([]);
 		for (let x = startX; x < startX + blockWidth; x++) {
-			const offset = (y * width + x) * 3; // RGB値なので、3つのチャネル
-			const r = rawData[offset]; // 赤
-			const g = rawData[offset + 1]; // 緑
-			const b = rawData[offset + 2]; // 青
+			const offset = (y * width + x) * 3;
+			const r = rawData[offset];
+			const g = rawData[offset + 1];
+			const b = rawData[offset + 2];
 			result.at(-1)?.push([r, g, b]);
-
-			// ここで、r, g, bを使って任意の処理を行う
-			// 例: 色を変更したい場合、r, g, bを変更して新しい色を設定することができます
 		}
 	}
 	return result;
 }
 
-// 画像を処理
 processImage(process.argv[2]);
