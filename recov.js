@@ -3,12 +3,25 @@ import sharp from "sharp";
 import fs from "fs/promises";
 import { buf2img } from "./binfmt.js";
 
+/**
+ * convert yuv to rgb
+ * @param {[number,number,number]} param0 YUV color
+ * @returns {[number,number,number]} RGB color
+ */
 function yuvToRgbNorm([Y, U, V]) {
 	const R = Y + 1.402 * (V - 128);
 	const G = Y - 0.344 * (U - 128) - 0.714 * (V - 128);
 	const B = Y + 1.772 * (U - 128);
 	return [R, G, B];
 }
+/**
+ * calculate pixel from delta
+ * @param {number} prev previous quantized pixel
+ * @param {number} del delta
+ * @param {number} max maximum number
+ * @returns {number} current quantized pixel
+ */
+
 function pixdelta(prev, del, max) {
 	return (prev + del) % max;
 }
@@ -41,7 +54,7 @@ async function reconstructImage({ width, height, blocks }) {
 			}
 			let prevpix = [0, 0, 0];
 
-			const cornersOrig = corners.map((a) => {
+			const cornersOrig = corners.map((/** @type {number} */ a) => {
 				const oy =
 					(Math.floor(a / 16) / 15) * (blockmaxy - blockminy) + blockminy;
 				const ou =
@@ -65,20 +78,20 @@ async function reconstructImage({ width, height, blocks }) {
 					const u = blockX / 7;
 					const v = blockY / 7;
 
-					const interpolate = (tl, tr, bl, br) => {
+					const interpolate = (/** @type {number} */ tl, /** @type {number} */ tr, /** @type {number} */ bl, /** @type {number} */ br) => {
 						const top = tl * (1 - u) + tr * u;
 						const bottom = bl * (1 - u) + br * u;
 						return top * (1 - v) + bottom * v;
 					};
 
 					const cy = interpolatey
-						? interpolate(...cornersOrig.map((a) => a[0]))
+						? interpolate(...cornersOrig.map((/** @type {any[]} */ a) => a[0]))
 						: (dy / 15) * (blockmaxy - blockminy) + blockminy;
 					const cu = interpolateu
-						? interpolate(...cornersOrig.map((a) => a[1]))
+						? interpolate(...cornersOrig.map((/** @type {any[]} */ a) => a[1]))
 						: (du / 3) * (blockmaxu - blockminu) + blockminu;
 					const cv = interpolatev
-						? interpolate(...cornersOrig.map((a) => a[2]))
+						? interpolate(...cornersOrig.map((/** @type {any[]} */ a) => a[2]))
 						: (dv / 3) * (blockmaxv - blockminv) + blockminv;
 					const [r, g, b] = yuvToRgbNorm([cy, cu, cv]);
 					const cr = r < 0 ? 0 : r > 255 ? 255 : r;
