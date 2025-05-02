@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import sharp from "sharp";
 import fs from "fs/promises";
 import { img2buf } from "./binfmt.js";
