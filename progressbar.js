@@ -13,10 +13,10 @@ export class ProgressBar {
 		const incompleteChars = Math.floor(40 - (this.progress / this.max) * 40);
 		process.stderr.write(
 			`\r${this.title}[${"#".repeat(completeChars)}${" ".repeat(
-				incompleteChars
+				incompleteChars,
 			)}]${this.progress.toString().padStart(this.max.toString().length)}/${
 				this.max
-			}`
+			}`,
 		);
 	}
 }

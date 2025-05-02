@@ -91,15 +91,15 @@ async function processImage(imagePath) {
 
 				const [blockminy, blockmaxy, blockdrangey] = getChannelStats(
 					blockyuv,
-					0
+					0,
 				);
 				const [blockminu, blockmaxu, blockdrangeu] = getChannelStats(
 					blockyuv,
-					1
+					1,
 				);
 				const [blockminv, blockmaxv, blockdrangev] = getChannelStats(
 					blockyuv,
-					2
+					2,
 				);
 				const nblock = blockyuv.map((x, yi) =>
 					x.map(([cy, cu, cv], xi) => [
@@ -108,7 +108,7 @@ async function processImage(imagePath) {
 							: (cy - blockminy) / blockdrangey,
 						blockdrangeu < COMPRESS_LEVEL ? 0 : (cu - blockminu) / blockdrangeu,
 						blockdrangev < COMPRESS_LEVEL ? 0 : (cv - blockminv) / blockdrangev,
-					])
+					]),
 				);
 				let prevpix = [0, 0, 0];
 				const nblock4b = nblock.map((tileline, y) => {
@@ -127,7 +127,7 @@ async function processImage(imagePath) {
 					});
 				});
 				const nblock4bn = nblock4b.map((x) =>
-					x.map(([r, g, b]) => (r * 4 + g) * 4 + b)
+					x.map(([r, g, b]) => (r * 4 + g) * 4 + b),
 				);
 				const corners = [
 					blockyuv[0][0],

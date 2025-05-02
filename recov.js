@@ -41,8 +41,8 @@ reconstructImage(
 	buf2img(
 		program.args[0] == "-"
 			? new DataView(imgbuffer.buffer)
-			: new DataView(buf.buffer)
-	)
+			: new DataView(buf.buffer),
+	),
 );
 // reconstructImage(JSON.parse(await fs.readFile(process.argv[2])));
 
@@ -126,11 +126,11 @@ async function reconstructImage({ width, height, blocks }) {
 				}
 			}
 			pb.increment();
-		}
+		},
 	);
 
 	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
-		process.argv[3]
+		process.argv[3],
 	);
 	process.stderr.write("\n");
 }

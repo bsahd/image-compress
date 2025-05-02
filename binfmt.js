@@ -2,10 +2,10 @@ import assert from "assert";
 import { ProgressBar } from "./progressbar.js";
 
 const msg = new TextEncoder().encode(
-	"this is binary image of https://github.com/bsahd/image-compress format.\nversion:230606ee9a6d0b45b71167f8faa01ed169cd96bb\n\n\n\n\n\n\n\n\n"
+	"this is binary image of https://github.com/bsahd/image-compress format.\nversion:230606ee9a6d0b45b71167f8faa01ed169cd96bb\n\n\n\n\n\n\n\n\n",
 );
 const endmsg = new TextEncoder().encode(
-	"\n\n\nthis is binary format. read head using head command for more information.\n"
+	"\n\n\nthis is binary format. read head using head command for more information.\n",
 );
 export function buf2img(buf) {
 	const img = {};
@@ -68,8 +68,8 @@ export function buf2img(buf) {
 export function img2buf(img) {
 	const buffer = new DataView(
 		new ArrayBuffer(
-			img.blocks.length * (64 + 7 + 4) + 8 + msg.byteLength + endmsg.byteLength
-		)
+			img.blocks.length * (64 + 7 + 4) + 8 + msg.byteLength + endmsg.byteLength,
+		),
 	);
 	let writeHead = 0;
 	function writeBuf32(a) {
@@ -100,7 +100,7 @@ export function img2buf(img) {
 		writeBuf8(
 			(block.interpolatey ? 4 : 0) +
 				(block.interpolateu ? 2 : 0) +
-				(block.interpolatev ? 1 : 0)
+				(block.interpolatev ? 1 : 0),
 		);
 	}
 	for (const block of img.blocks) {
