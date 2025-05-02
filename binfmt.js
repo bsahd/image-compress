@@ -1,3 +1,7 @@
+import assert from "assert";
+
+const msg = new TextEncoder().encode("this is binary image of https://github.com/bsahd/image-compress format.\nversion:230606ee9a6d0b45b71167f8faa01ed169cd96bb\n\n\n\n\n\n\n\n\n")
+const endmsg = new TextEncoder().encode("\n\n\nthis is binary format. read head using head command for more information.\n")
 export function buf2img(buf) {
 	const img = {};
 	let readHead = 0;
@@ -12,6 +16,9 @@ export function buf2img(buf) {
 	function readBuf8() {
 		readHead++;
 		return buf.getUint8(readHead - 1);
+	}
+	for (let i = 0; i < msg.length; i++) {
+		assert(msg[i] == readBuf8())
 	}
 	img.width = readBuf16();
 	img.height = readBuf16();
@@ -48,11 +55,14 @@ export function buf2img(buf) {
 			}
 		}
 	}
+	for (let i = 0; i < endmsg.length; i++) {
+		assert(endmsg[i] == readBuf8())
+	}
 	return img;
 }
 export function img2buf(img) {
 	const buffer = new DataView(
-		new ArrayBuffer(img.blocks.length * (64 + 7 + 4) + 8),
+		new ArrayBuffer(img.blocks.length * (64 + 7 + 4) + 8+msg.byteLength+endmsg.byteLength),
 	);
 	let writeHead = 0;
 	function writeBuf32(a) {
@@ -66,6 +76,9 @@ export function img2buf(img) {
 	function writeBuf8(a) {
 		buffer.setUint8(writeHead, a);
 		writeHead++;
+	}
+	for (let i = 0; i < msg.length; i++) {
+		writeBuf8(msg[i]);
 	}
 	writeBuf16(img.width);
 	writeBuf16(img.height);
@@ -94,6 +107,9 @@ export function img2buf(img) {
 				writeBuf8(element);
 			}
 		}
+	}
+	for (let i = 0; i < endmsg.length; i++) {
+		writeBuf8(endmsg[i]);
 	}
 	return buffer;
 }
