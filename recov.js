@@ -78,7 +78,12 @@ async function reconstructImage({ width, height, blocks }) {
 					const u = blockX / 7;
 					const v = blockY / 7;
 
-					const interpolate = (/** @type {number} */ tl, /** @type {number} */ tr, /** @type {number} */ bl, /** @type {number} */ br) => {
+					const interpolate = (
+						/** @type {number} */ tl,
+						/** @type {number} */ tr,
+						/** @type {number} */ bl,
+						/** @type {number} */ br,
+					) => {
 						const top = tl * (1 - u) + tr * u;
 						const bottom = bl * (1 - u) + br * u;
 						return top * (1 - v) + bottom * v;
