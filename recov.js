@@ -13,6 +13,38 @@ function pixdelta(prev, del, max) {
 	return (prev + del) % max;
 }
 
+import { Command } from "commander";
+const program = new Command();
+program
+	.name("bsahd/image-compres")
+	.description("a entropy reducer for image.[decode]")
+	.argument("<input-file>", 'set "-" to output to stdin')
+	.argument("<output-file>", 'set "-" to output to stdout')
+	.parse();
+if (program.args[0] == "-") {
+	const chunks = [];
+	for await (const chunk of process.stdin) {
+		chunks.push(chunk);
+	}
+	var imgbuffer = Buffer.concat(chunks);
+} else {
+	var buf = await fs.readFile(process.argv[2]);
+}
+
+if (process.stdout.isTTY && program.args[1] == "-") {
+	console.error("stdout is terminal, aborting");
+	process.exit();
+}
+
+reconstructImage(
+	buf2img(
+		program.args[0] == "-"
+			? new DataView(imgbuffer.buffer)
+			: new DataView(buf.buffer)
+	)
+);
+// reconstructImage(JSON.parse(await fs.readFile(process.argv[2])));
+
 // imgdataを元に画像を再構築する関数
 async function reconstructImage({ width, height, blocks }) {
 	const resultBuffer = Buffer.alloc(width * height * 3);
@@ -99,9 +131,5 @@ async function reconstructImage({ width, height, blocks }) {
 	await sharp(resultBuffer, { raw: { width, height, channels: 3 } }).toFile(
 		process.argv[3]
 	);
-	process.stderr.write("\n")
+	process.stderr.write("\n");
 }
-
-const buf = await fs.readFile(process.argv[2]);
-reconstructImage(buf2img(new DataView(buf.buffer)));
-// reconstructImage(JSON.parse(await fs.readFile(process.argv[2])));

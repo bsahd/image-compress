@@ -8,10 +8,14 @@ program
 	.name("bsahd/image-compres")
 	.description("a entropy reducer for image.")
 	.option("-l, --level <compress-level>", "set compression level.", "16")
-	.argument("<input-file>")
-	.argument("<output-file>")
+	.argument("<input-file>", 'set "-" to output to stdin')
+	.argument("<output-file>", 'set "-" to output to stdout')
 	.parse();
 
+if (process.stdout.isTTY && program.args[1] == "-") {
+	console.error("stdout is terminal, aborting");
+	process.exit();
+}
 function rgbToYuvNorm([r, g, b]) {
 	const Y = 0.299 * r + 0.587 * g + 0.114 * b;
 	const U = -0.169 * r - 0.331 * g + 0.5 * b + 128;
@@ -26,11 +30,19 @@ function pixdelta(prev, now, max) {
 		return max + now - prev;
 	}
 }
-const COMPRESS_LEVEL = parseInt(program.opts().COMPRESS_LEVEL);
+const COMPRESS_LEVEL = parseInt(program.opts().level);
 
 async function processImage(imagePath) {
 	try {
-		let image = sharp(imagePath);
+		if (imagePath == "-") {
+			const chunks = [];
+			for await (const chunk of process.stdin) {
+				chunks.push(chunk);
+			}
+
+			var imgbuffer = Buffer.concat(chunks);
+		}
+		let image = sharp(imagePath == "-" ? imgbuffer : imagePath);
 
 		const metadata = await image.metadata();
 		if (!(metadata.width && metadata.height)) {
@@ -156,7 +168,11 @@ async function processImage(imagePath) {
 				pb.increment();
 			}
 		}
-		await fs.writeFile(program.args[1], img2buf(imgdata));
+		if (program.args[1] == "-") {
+			process.stdout.write(img2buf(imgdata));
+		} else {
+			await fs.writeFile(program.args[1], img2buf(imgdata));
+		}
 		pb.increment();
 		process.stderr.write("\n");
 		// await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
