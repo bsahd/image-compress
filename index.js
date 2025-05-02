@@ -2,6 +2,15 @@ import sharp from "sharp";
 import fs from "fs/promises";
 import { img2buf } from "./binfmt.js";
 import { ProgressBar } from "./progressbar.js";
+import { Command } from "commander";
+const program = new Command();
+program
+	.name("bsahd/image-compres")
+	.description("a entropy reducer for image.")
+	.option("-l, --level <compress-level>", "set compression level.", "16")
+	.argument("<input-file>")
+	.argument("<output-file>")
+	.parse();
 
 function rgbToYuvNorm([r, g, b]) {
 	const Y = 0.299 * r + 0.587 * g + 0.114 * b;
@@ -17,7 +26,7 @@ function pixdelta(prev, now, max) {
 		return max + now - prev;
 	}
 }
-const COMPRESS_LEVEL = parseInt(process.argv[4]);
+const COMPRESS_LEVEL = parseInt(program.opts().COMPRESS_LEVEL);
 
 async function processImage(imagePath) {
 	try {
@@ -147,9 +156,9 @@ async function processImage(imagePath) {
 				pb.increment();
 			}
 		}
-		await fs.writeFile(process.argv[3], img2buf(imgdata));
+		await fs.writeFile(program.args[1], img2buf(imgdata));
 		pb.increment();
-		process.stderr.write("\n")
+		process.stderr.write("\n");
 		// await fs.writeFile(process.argv[3], JSON.stringify(imgdata));
 	} catch (error) {
 		console.error("画像の処理中にエラーが発生しました:", error);
@@ -172,4 +181,4 @@ function getBlock(rawData, width, startX, startY, blockWidth, blockHeight) {
 	return result;
 }
 
-processImage(process.argv[2]);
+processImage(program.args[0]);
