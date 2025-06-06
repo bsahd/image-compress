@@ -28,6 +28,7 @@ export function buf2img(buf) {
 	img.width = readBuf16();
 	img.height = readBuf16();
 	const blockcount = readBuf32();
+	console.log(img.width, img.height, blockcount)
 	img.blocks = [];
 	for (let index = 0; index < blockcount; index++) {
 		const elem = {};
