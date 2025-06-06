@@ -49,8 +49,7 @@ impl ProgressBar {
     }
 }
 
-fn yuv_to_rgb([yu, uu, vu]: [u8; 3]) -> [u8; 3] {
-    let [y, u, v] = [yu as f32, uu as f32, vu as f32];
+fn yuv_to_rgb([y, u, v]: [f32; 3]) -> [u8; 3] {
     let r = y + 1.402 * (v - 128.0);
     let g = y - 0.344 * (u - 128.0) - 0.714 * (v - 128.0);
     let b = y + 1.772 * (u - 128.0);
@@ -65,10 +64,10 @@ fn pixdelta_decode(prev: u8, del: u8, max: u8) -> u8 {
     (prev + del) % max
 }
 
-fn interpolate(tl: u8, tr: u8, bl: u8, br: u8, u: u8, v: u8) -> u8 {
-    let top = tl * (1 - u) + tr * u;
-    let bottom = bl * (1 - u) + br * u;
-    top * (1 - v) + bottom * v
+fn interpolate(tl: f32, tr: f32, bl: f32, br: f32, u: f32, v: f32) -> f32 {
+    let top = tl * (1.0 - u) + tr * u;
+    let bottom = bl * (1.0 - u) + br * u;
+    top * (1.0 - v) + bottom * v
 }
 
 fn pad_image_to_multiple_of_8(img: &RgbImage) -> RgbImage {
@@ -113,7 +112,7 @@ fn rgb_to_yuv([r, g, b]: [u8; 3]) -> [f32; 3] {
     [y, u, v]
 }
 
-fn pixdelta(prev: u8, now: u8, max: u8) -> u8 {
+fn pixdelta(prev: f32, now: f32, max: f32) -> f32 {
     if now >= prev {
         now - prev
     } else {
@@ -219,21 +218,21 @@ fn encode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 })
                 .collect();
 
-            let mut prev = [0u8, 0, 0];
+            let mut prev = [0.0, 0.0, 0.0];
             let mut nblock4bn = vec![];
             for row in &nblock {
                 let mut row_bin = vec![];
                 for &[y, u, v] in row {
-                    let qy = (y * 15.9).floor() as u8;
-                    let qu = (u * 3.9).floor() as u8;
-                    let qv = (v * 3.9).floor() as u8;
+                    let qy = (y * 15.9).floor();
+                    let qu = (u * 3.9).floor();
+                    let qv = (v * 3.9).floor();
                     let d = [
-                        pixdelta(prev[0], qy, 16),
-                        pixdelta(prev[1], qu, 4),
-                        pixdelta(prev[2], qv, 4),
+                        pixdelta(prev[0], qy, 16.0),
+                        pixdelta(prev[1], qu, 4.0),
+                        pixdelta(prev[2], qv, 4.0),
                     ];
                     prev = [qy, qu, qv];
-                    row_bin.push((d[0] * 4 + d[1]) * 4 + d[2]);
+                    row_bin.push((d[0] as u8 * 4 + d[1] as u8) * 4 + d[2] as u8);
                 }
                 nblock4bn.push(row_bin);
             }
@@ -244,7 +243,7 @@ fn encode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 block_yuv[7][0],
                 block_yuv[7][7],
             ];
-            let corners_bin: Vec<u8> = corners
+            let corners_bin = corners
                 .iter()
                 .map(|&[y, u, v]| {
                     let qy = if rangey < args.level as f32 / 2.0 {
@@ -262,7 +261,7 @@ fn encode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                     } else {
                         (v - minv) / rangev * 3.9
                     };
-                    ((qy as u8 * 4 + qu as u8) * 4 + qv as u8) as u8
+                    ((qy * 4.0 + qu) * 4.0 + qv) as u8
                 })
                 .collect();
 
@@ -328,13 +327,13 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             .corners
             .iter()
             .map(|&val| {
-                let oy = ((val / 16) as f32 / 15.0) as u8 * (block.blockmaxy - block.blockminy)
-                    + block.blockminy;
-                let ou = (((val % 16) / 4) as f32 / 3.0) as u8
-                    * (block.blockmaxu - block.blockminu)
-                    + block.blockminu;
-                let ov = ((val % 4) as f32 / 3.0) as u8 * (block.blockmaxv - block.blockminv)
-                    + block.blockminv;
+                let oy = ((val / 16) as f32 / 15.0) * (block.blockmaxy - block.blockminy) as f32
+                    + block.blockminy as f32;
+                let ou = (((val % 16) / 4) as f32 / 3.0)
+                    * (block.blockmaxu - block.blockminu) as f32
+                    + block.blockminu as f32;
+                let ov = ((val % 4) as f32 / 3.0) * (block.blockmaxv - block.blockminv) as f32
+                    + block.blockminv as f32;
                 [oy, ou, ov]
             })
             .collect::<Vec<_>>();
@@ -345,17 +344,17 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 let py = y + by;
                 let encoded = block.nblock4bn[by as usize][bx as usize];
 
-                let oy = (encoded / 16) as u8;
-                let ou = ((encoded % 16) / 4) as u8;
-                let ov = (encoded % 4) as u8;
+                let oy = encoded / 16;
+                let ou = (encoded % 16) / 4;
+                let ov = encoded % 4;
 
                 let dy = pixdelta_decode(prevpix[0], oy, 16);
                 let du = pixdelta_decode(prevpix[1], ou, 4);
                 let dv = pixdelta_decode(prevpix[2], ov, 4);
                 prevpix = [dy, du, dv];
 
-                let u = (bx as f32 / 7.0) as u8;
-                let v = (by as f32 / 7.0) as u8;
+                let u = (bx as f32 / 7.0);
+                let v = (by as f32 / 7.0);
 
                 let cy = if block.interpolatey {
                     interpolate(
@@ -367,7 +366,8 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                         v,
                     )
                 } else {
-                    (dy as f32 / 15.0) as u8 * (block.blockmaxy - block.blockminy) + block.blockminy
+                    (dy as f32 / 15.0) * (block.blockmaxy - block.blockminy) as f32
+                        + block.blockminy as f32
                 };
                 let cu = if block.interpolateu {
                     interpolate(
@@ -379,7 +379,8 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                         v,
                     )
                 } else {
-                    (du as f32 / 3.0) as u8 * (block.blockmaxu - block.blockminu) + block.blockminu
+                    (du as f32 / 3.0) * (block.blockmaxu - block.blockminu) as f32
+                        + block.blockminu as f32
                 };
                 let cv = if block.interpolatev {
                     interpolate(
@@ -391,7 +392,8 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                         v,
                     )
                 } else {
-                    (dv as f32 / 3.0) as u8 * (block.blockmaxv - block.blockminv) + block.blockminv
+                    (dv as f32 / 3.0) * (block.blockmaxv - block.blockminv) as f32
+                        + block.blockminv as f32
                 };
 
                 let rgb = yuv_to_rgb([cy, cu, cv]);
