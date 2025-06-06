@@ -99,6 +99,8 @@ struct Args {
     output: String,
     #[arg(short, long, default_value_t = false)]
     decode: bool,
+    #[arg(short, long, default_value_t = false)]
+    quiet: bool,
 }
 
 // RGB to YUV
@@ -278,12 +280,15 @@ fn encode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 interpolateu: rangeu < args.level as f32,
                 interpolatev: rangev < args.level as f32,
             });
-            pb.increment();
+            if !args.quiet {
+                pb.increment();
+            }
         }
     }
-    eprintln!();
-
-    println!("{} {} {}", width, height, blocks.len());
+    if !args.quiet {
+        eprintln!();
+    }
+    
     // 出力
     if args.output == "-" {
         io::stdout().write_all(
@@ -353,8 +358,8 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 let dv = pixdelta_decode(prevpix[2], ov, 4);
                 prevpix = [dy, du, dv];
 
-                let u = (bx as f32 / 7.0);
-                let v = (by as f32 / 7.0);
+                let u = bx as f32 / 7.0;
+                let v = by as f32 / 7.0;
 
                 let cy = if block.interpolatey {
                     interpolate(
@@ -400,7 +405,9 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
                 if px < img.width && py < img.height {
                     image.put_pixel(px as u32, py as u32, Rgb(rgb));
                 }
-                pb.increment();
+                if !args.quiet {
+                    pb.increment();
+                }
             }
         }
 
@@ -410,7 +417,9 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
             y += 8;
         }
     }
-    eprintln!();
+    if !args.quiet {
+        eprintln!("")
+    }
 
     image.save(Path::new(&args.output))?;
     Ok(())
