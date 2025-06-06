@@ -288,7 +288,7 @@ fn encode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     if !args.quiet {
         eprintln!();
     }
-    
+
     // 出力
     if args.output == "-" {
         io::stdout().write_all(
@@ -425,13 +425,11 @@ fn decode(args: Args) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() {
     let args = Args::parse();
     if args.decode {
-        decode(args)?;
+        decode(args).unwrap();
     } else {
-        encode(args)?;
+        encode(args).unwrap();
     }
-
-    Ok(())
 }
