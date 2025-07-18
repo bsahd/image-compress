@@ -8,7 +8,7 @@
 # Usage
 ## JS Version
 requires sharp.
-- Encode: `$ node js-ver/index.js /path/to/source output.bin COMPRESSION_LEVEL`
+- Encode: `$ node js-ver/index.js /path/to/source output.bin -l COMPRESSION_LEVEL`
   - COMPRESSION_LEVEL is number between 1~255
 - Decode: `$ node js-ver/recov.js output.bin target.png`
 ## Lua Version
