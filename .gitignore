@@ -146,4 +146,4 @@ dist
 
 # Added by cargo
 
-rust-ver/target
+rust/target

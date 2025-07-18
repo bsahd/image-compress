@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 local ffi = require "ffi"
 local vips = require "vips"
-local binfmt = require "lua-ver.binfmt"
+local binfmt = require "lua.binfmt"
 
 local args = { ... }
 local input_file = args[1] or error("Input file required")

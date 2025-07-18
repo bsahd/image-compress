@@ -1,7 +1,7 @@
 #!/usr/bin/env lua
 
 local vips = require "vips"
-local binfmt = require "lua-ver.binfmt"
+local binfmt = require "lua.binfmt"
 
 local args = { ... }
 local COMPRESS_LEVEL = tonumber(args[1]) or 16
