@@ -3,6 +3,13 @@
 local vips = require "vips"
 local binfmt = require "lua.binfmt"
 
+local _unpack
+if table.unpack then
+    _unpack = table.unpack
+else
+    _unpack = unpack
+end
+
 local args = { ... }
 local COMPRESS_LEVEL = tonumber(args[1]) or 16
 local input_file = args[2] or error("Input file required")
@@ -102,7 +109,7 @@ for y = 0, height - 1, 8 do
         for yi, row in ipairs(block_yuv) do
             nblock[yi] = {}
             for xi, px in ipairs(row) do
-                local cy, cu, cv = table.unpack(px)
+                local cy, cu, cv = _unpack(px)
                 nblock[yi][xi] = {
                     drangey < COMPRESS_LEVEL / 2 and 0 or (cy - blockminy) / drangey,
                     drangeu < COMPRESS_LEVEL and 0 or (cu - blockminu) / drangeu,
@@ -116,7 +123,7 @@ for y = 0, height - 1, 8 do
         for yi, row in ipairs(nblock) do
             nblock4b[yi] = {}
             for xi, px in ipairs(row) do
-                local cy, cu, cv = table.unpack(px)
+                local cy, cu, cv = _unpack(px)
                 local qy = math.floor(cy * 15.9)
                 local qu = math.floor(cu * 3.9)
                 local qv = math.floor(cv * 3.9)
@@ -133,7 +140,7 @@ for y = 0, height - 1, 8 do
         for yi, row in ipairs(nblock4b) do
             nblock4bn[yi] = {}
             for xi, p in ipairs(row) do
-                local r_delta, g_delta, b_delta = table.unpack(p)
+                local r_delta, g_delta, b_delta = _unpack(p)
                 nblock4bn[yi][xi] = (r_delta * 4 + g_delta) * 4 + b_delta
             end
         end
@@ -141,7 +148,7 @@ for y = 0, height - 1, 8 do
         local corners_raw = { block_yuv[1][1], block_yuv[1][8], block_yuv[8][1], block_yuv[8][8] }
         local corners = {}
         for _, p_table in ipairs(corners_raw) do
-            local cy, cu, cv = table.unpack(p_table)
+            local cy, cu, cv = _unpack(p_table)
             local norm_y = drangey > 0 and (cy - blockminy) / drangey or 0
             local norm_u = drangeu > 0 and (cu - blockminu) / drangeu or 0
             local norm_v = drangev > 0 and (cv - blockminv) / drangev or 0
