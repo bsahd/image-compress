@@ -38,16 +38,16 @@ function M.buf_to_img(data)
     local header = read_buf("c" .. #msg)
     assert(header == msg, "Invalid header")
 
-    img.width = read_buf("<i2")
-    img.height = read_buf("<i2")
-    local blockcount = read_buf("<i4")
+    img.width = read_buf(">i2")
+    img.height = read_buf(">i2")
+    local blockcount = read_buf(">i4")
     img.blocks = {}
 
     for i = 1, blockcount do
         local elem = {}
         elem.blockmaxy, elem.blockminy, elem.blockmaxu, elem.blockminu, elem.blockmaxv, elem.blockminv = read_buf(
-            "<BBBBBB")
-        local interpolaten = read_buf("<B")
+            ">BBBBBB")
+        local interpolaten = read_buf(">B")
         elem.interpolatey = interpolaten >= 4
         elem.interpolateu = (interpolaten % 4) >= 2
         elem.interpolatev = (interpolaten % 2) == 1
@@ -59,7 +59,7 @@ function M.buf_to_img(data)
     for i = 1, blockcount do
         if not img.blocks[i] then error("Block " .. i .. " not found in img.blocks") end
         for _ = 1, 4 do
-            table.insert(img.blocks[i].corners, read_buf("<B"))
+            table.insert(img.blocks[i].corners, read_buf(">B"))
         end
     end
 
@@ -68,7 +68,7 @@ function M.buf_to_img(data)
         for _ = 1, 8 do
             local row = {}
             for _ = 1, 8 do
-                table.insert(row, read_buf("<B"))
+                table.insert(row, read_buf(">B"))
             end
             table.insert(img.blocks[i].nblock4bn, row)
         end
@@ -83,29 +83,29 @@ end
 function M.img_to_buf(img)
     local parts = {}
     table.insert(parts, msg)
-    table.insert(parts, struct.pack("<i2", img.width))
-    table.insert(parts, struct.pack("<i2", img.height))
-    table.insert(parts, struct.pack("<i4", #img.blocks))
+    table.insert(parts, struct.pack(">i2", img.width))
+    table.insert(parts, struct.pack(">i2", img.height))
+    table.insert(parts, struct.pack(">i4", #img.blocks))
 
     for _, block in ipairs(img.blocks) do
         table.insert(parts,
-            struct.pack("<BBBBBB", block.blockmaxy, block.blockminy, block.blockmaxu, block.blockminu, block.blockmaxv,
+            struct.pack(">BBBBBB", block.blockmaxy, block.blockminy, block.blockmaxu, block.blockminu, block.blockmaxv,
                 block.blockminv))
         local interpolaten = (block.interpolatey and 4 or 0) + (block.interpolateu and 2 or 0) +
             (block.interpolatev and 1 or 0)
-        table.insert(parts, struct.pack("<B", interpolaten))
+        table.insert(parts, struct.pack(">B", interpolaten))
     end
 
     for _, block in ipairs(img.blocks) do
         for _, corner in ipairs(block.corners) do
-            table.insert(parts, struct.pack("<B", corner))
+            table.insert(parts, struct.pack(">B", corner))
         end
     end
 
     for _, block in ipairs(img.blocks) do
         for _, row in ipairs(block.nblock4bn) do
             for _, p in ipairs(row) do
-                table.insert(parts, struct.pack("<B", p))
+                table.insert(parts, struct.pack(">B", p))
             end
         end
     end
